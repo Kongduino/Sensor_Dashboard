@@ -398,24 +398,29 @@ End
 		  // One chart per quantity, so each gets a Y axis fitted to its own values (see ChartLook)
 		  StyleChart(TemperatureChart, "Temperature", "0.0")
 		  TemperatureChart.AddLabels TemperatureLabels
+		  TemperatureChart.AddTimes sampleTimes
 		  TemperatureChart.AddDatasets LineSet("SEN55", "temperature", SEN55temperature, " °C"), _
 		  LineSet("SCD40", "temperature2", SCD40temperature, " °C")
 		  
 		  StyleChart(HumidityChart, "Humidity", "0.0")
 		  HumidityChart.AddLabels TemperatureLabels
+		  HumidityChart.AddTimes sampleTimes
 		  HumidityChart.AddDatasets LineSet("SEN55", "humidity", SEN55humidity, " %"), _
 		  LineSet("SCD40", "humidity2", SCD40humidity, " %")
 		  
 		  StyleChart(CO2Chart, "CO2", "0")
 		  CO2Chart.AddLabels TemperatureLabels
+		  CO2Chart.AddTimes sampleTimes
 		  CO2Chart.AddDataset LineSet("CO2 (SCD40)", "co2", SCD40CO2, " ppm")
 		  
 		  StyleChart(VOCChart, "VOC index", "0")
 		  VOCChart.AddLabels TemperatureLabels
+		  VOCChart.AddTimes sampleTimes
 		  VOCChart.AddDataset LineSet("VOC index (SEN55)", "voc", SEN55voc, "")
 		  
 		  StyleChart(PMchart, "Particulate matter", "0.0", True)
 		  PMchart.AddLabels TemperatureLabels
+		  PMchart.AddTimes sampleTimes
 		  PMchart.AddDatasets BarSet("PM1.0", "pm1", SEN55PM1, " µg/m³"), BarSet("PM2.5", "pm25", SEN55PM2, " µg/m³"), _
 		  BarSet("PM4.0", "pm4", SEN55PM4, " µg/m³"), BarSet("PM10", "pm10", SEN55PM10, " µg/m³")
 		  
@@ -464,11 +469,13 @@ End
 		  // Label: the time of the reading (updateTime, seconds since 1970) as HH:MM
 		  Dim d As New DateTime(updateTime.Val())
 		  TemperatureLabels.Add Format(d.Hour, "00") + ":" + Format(d.Minute, "00")
+		  sampleTimes.Add updateTime.Val
 		  mLastUpdateTime = updateTime
 		  
 		  // Keep the last kMaxSamples samples: drop the oldest ones
 		  While TemperatureLabels.Count > kMaxSamples
 		    TemperatureLabels.RemoveAt(0)
+		    sampleTimes.RemoveAt(0)
 		    SEN55temperature.RemoveAt(0)
 		    SCD40temperature.RemoveAt(0)
 		    SEN55humidity.RemoveAt(0)
@@ -666,6 +673,10 @@ End
 
 	#tag Property, Flags = &h0
 		TemperatureLabels() As String
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private sampleTimes() As Double
 	#tag EndProperty
 
 	#tag Property, Flags = &h0

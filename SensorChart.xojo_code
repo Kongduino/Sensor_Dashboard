@@ -14,9 +14,15 @@ Inherits DesktopCanvas
 		  Dim n As Integer = SeriesLength
 		  Dim hoverIndex As Integer = -1
 		  If n > 0 And x >= mPlotLeft - 10 And x <= mPlotRight + 10 Then
-		    hoverIndex = Round((x - XForIndex(0)) / Max(1.0, SlotWidth))
-		    If hoverIndex < 0 Then hoverIndex = 0
-		    If hoverIndex > n - 1 Then hoverIndex = n - 1
+		    // The nearest sample (they aren't evenly spaced on a time axis)
+		    Dim best As Double = 1e9
+		    For i As Integer = 0 To n - 1
+		      Dim distance As Double = Abs(x - XForIndex(i))
+		      If distance < best Then
+		        best = distance
+		        hoverIndex = i
+		      End If
+		    Next
 		  End If
 		  If hoverIndex <> mHover Then
 		    mHover = hoverIndex
@@ -43,6 +49,14 @@ Inherits DesktopCanvas
 		  For Each s As SensorSeries In series
 		    mSeries.Add s
 		  Next
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Sub AddTimes(times() As Double)
+		  // The window's own array of sample times (seconds, one per sample): kept by reference, never modified here.
+		  // With it, the X axis is a time axis
+		  mTimes = times
 		End Sub
 	#tag EndMethod
 
@@ -140,17 +154,21 @@ Inherits DesktopCanvas
 		    v = v + stepSize
 		  Wend
 		  
-		  // X labels: at most about 7, always the latest
-		  Dim every As Integer = Max(1, Ceiling(n / 7))
-		  For i As Integer = 0 To n - 1
-		    If i Mod every = 0 Or i = n - 1 Then
-		      If i = n - 1 Or n - 1 - i >= every / 2 Then // keep the last one clear of its neighbour
-		        Dim xLabel As String = LabelAt(i)
-		        g.DrawingColor = textColor
-		        g.DrawText(xLabel, XForIndex(i) - g.TextWidth(xLabel) / 2, mPlotBottom + 8 + g.FontAscent)
-		      End If
+		  // X labels under their samples, skipping those that would overlap; the latest is always shown
+		  g.DrawingColor = textColor
+		  Dim lastLabel As String = LabelAt(n - 1)
+		  Dim lastLeft As Double = XForIndex(n - 1) - g.TextWidth(lastLabel) / 2
+		  Dim usedRight As Double = -1e9
+		  For i As Integer = 0 To n - 2
+		    Dim xLabel As String = LabelAt(i)
+		    Dim labelLeft As Double = XForIndex(i) - g.TextWidth(xLabel) / 2
+		    Dim labelRight As Double = labelLeft + g.TextWidth(xLabel)
+		    If labelLeft >= usedRight + 14 And labelRight <= lastLeft - 14 Then
+		      g.DrawText(xLabel, labelLeft, mPlotBottom + 8 + g.FontAscent)
+		      usedRight = labelRight
 		    End If
 		  Next
+		  g.DrawText(lastLabel, lastLeft, mPlotBottom + 8 + g.FontAscent)
 		  
 		  // The series
 		  Dim barCount As Integer
@@ -174,13 +192,12 @@ Inherits DesktopCanvas
 	#tag Method, Flags = &h21
 		Private Sub DrawBars(g As Graphics, s As SensorSeries, barIndex As Integer, barCount As Integer)
 		  // Rounded bars from the axis bottom (0 for bars), side by side when there are several series
-		  Dim slot As Double = SlotWidth
-		  Dim groupWidth As Double = slot * 0.7
-		  Dim barWidth As Double = Max(2.0, groupWidth / Max(1, barCount) - 2)
+		  Dim groupW As Double = GroupWidth
+		  Dim barWidth As Double = Max(2.0, groupW / Max(1, barCount) - 2)
 		  Dim baseY As Double = YForValue(Max(0.0, mAxisLow))
 		  g.DrawingColor = ChartColor(s.Kind)
 		  For i As Integer = 0 To s.Values.LastIndex
-		    Dim x As Double = XForIndex(i) - groupWidth / 2 + barIndex * (barWidth + 2)
+		    Dim x As Double = XForIndex(i) - groupW / 2 + barIndex * (barWidth + 2)
 		    Dim y As Double = YForValue(s.Values(i))
 		    Dim barTop As Double = Min(y, baseY)
 		    Dim barHeight As Double = Max(1.0, Abs(baseY - y))
@@ -318,6 +335,21 @@ Inherits DesktopCanvas
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
+		Private Function GroupWidth() As Double
+		  // The width of one sample's bars: 70 % of the space to its nearest neighbour (on a time axis, the
+		  // smallest gap), between 4 and 60 pixels
+		  Dim n As Integer = SeriesLength
+		  Dim space As Double = SlotWidth
+		  If UseTime Then
+		    For i As Integer = 1 To n - 1
+		      space = Min(space, XForIndex(i) - XForIndex(i - 1))
+		    Next
+		  End If
+		  Return Min(60.0, Max(4.0, space * 0.7))
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
 		Private Function LabelAt(i As Integer) As String
 		  If i >= 0 And i <= mLabels.LastIndex Then Return mLabels(i)
 		  Return ""
@@ -385,8 +417,22 @@ Inherits DesktopCanvas
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
+		Private Function UseTime() As Boolean
+		  // A time axis when there is one time per sample, and they span some time
+		  Dim n As Integer = SeriesLength
+		  Return n >= 2 And mTimes.Count = n And mTimes(n - 1) > mTimes(0)
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
 		Private Function XForIndex(i As Integer) As Double
-		  // Samples are centred in equal slots across the plot
+		  // With times (AddTimes): placed by time, so gaps keep their real width. Without: centred in equal slots
+		  If UseTime Then
+		    Dim t0 As Double = mTimes(0)
+		    Dim t1 As Double = mTimes(SeriesLength - 1)
+		    Dim pad As Double = Min(24.0, (mPlotRight - mPlotLeft) / 4)
+		    Return mPlotLeft + pad + (mTimes(i) - t0) / (t1 - t0) * (mPlotRight - mPlotLeft - 2 * pad)
+		  End If
 		  Return mPlotLeft + (i + 0.5) * SlotWidth
 		End Function
 	#tag EndMethod
@@ -437,6 +483,10 @@ Inherits DesktopCanvas
 
 	#tag Property, Flags = &h21
 		Private mSeries() As SensorSeries
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mTimes() As Double
 	#tag EndProperty
 
 	#tag Property, Flags = &h21

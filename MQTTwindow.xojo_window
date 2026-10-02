@@ -497,18 +497,22 @@ End
 		  // Charts: one per quantity, so each gets a Y axis fitted to its own values (see ChartLook)
 		  StyleChart(TempChart, "Temperature", "0.0")
 		  TempChart.AddLabels dhtLabels
+		  TempChart.AddTimes dhtTimes
 		  TempChart.AddDataset LineSet("Temperature", "temperature", myTemp, " °C")
 		  
 		  StyleChart(RHChart, "Humidity", "0.0")
 		  RHChart.AddLabels dhtLabels
+		  RHChart.AddTimes dhtTimes
 		  RHChart.AddDataset LineSet("Relative humidity", "humidity", myRH, " %")
 		  
 		  StyleChart(HPaChart, "Pressure", "0.0")
 		  HPaChart.AddLabels paLabels
+		  HPaChart.AddTimes dhtTimes
 		  HPaChart.AddDataset LineSet("Pressure", "pressure", myPA, " hPa")
 		  
 		  StyleChart(SNRSSIchart, "RSSI / SNR", "0.0")
 		  SNRSSIchart.AddLabels snrLabels
+		  SNRSSIchart.AddTimes snrTimes
 		  SNRSSIchart.AddDatasets LineSet("RSSI", "rssi", myRSSI, " dBm"), LineSet("SNR", "snr", mySNR, " dB")
 		  
 		  Self.Show()
@@ -523,6 +527,7 @@ End
 		  Dim tsmp As String = Format(d.Hour, "00") + ":" + Format(d.Minute, "00") + ":" + Format(d.Second, "00")
 		  If rh <> -255 And temp <> -255 And pa <> -255 Then
 		    dhtLabels.Add tsmp
+		    dhtTimes.Add TS
 		    myRH.Add rh
 		    myTemp.Add temp
 		    paLabels.Add tsmp
@@ -538,6 +543,7 @@ End
 		  
 		  If snr <> -255 And rssi <> -255 Then
 		    snrLabels.Add tsmp
+		    snrTimes.Add TS
 		    LogEvents "MQTTwindow UpdateData", "RSSI: " + Str(rssi)
 		    LogEvents "MQTTwindow UpdateData", "SNR: " + Str(snr)
 		    myRSSI.Add rssi
@@ -549,6 +555,7 @@ End
 		  // Keep the last kMaxSamples samples: drop the oldest ones
 		  While dhtLabels.Count > kMaxSamples
 		    dhtLabels.RemoveAt(0)
+		    dhtTimes.RemoveAt(0)
 		    myRH.RemoveAt(0)
 		    myTemp.RemoveAt(0)
 		    paLabels.RemoveAt(0)
@@ -556,6 +563,7 @@ End
 		  Wend
 		  While snrLabels.Count > kMaxSamples
 		    snrLabels.RemoveAt(0)
+		    snrTimes.RemoveAt(0)
 		    myRSSI.RemoveAt(0)
 		    mySNR.RemoveAt(0)
 		  Wend
@@ -597,6 +605,14 @@ End
 
 	#tag Property, Flags = &h0
 		dhtLabels() As String
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private dhtTimes() As Double
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private snrTimes() As Double
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
