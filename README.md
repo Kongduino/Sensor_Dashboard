@@ -10,8 +10,20 @@ A desktop dashboard, written entirely in Xojo, that follows environment sensors 
 
 There are no plugins, no Python and no external tools. The Meshtastic parts use the [MQTT_Xojo](https://github.com/Kongduino/MQTT_Xojo) library, which is included in `Library/`.
 
+## Screenshots
+
+A Meshtastic node's own BME680, followed over USB. At the top, the latest values; under each chart, min / avg / max. The value under the mouse shows in a box, and samples sit at their real time, so the 6- and 9-minute gaps here keep their width.
+
+![Temperature chart of a Meshtastic node, with the hover box](docs/screenshots/device-temperature.png)
+
+<p>
+  <img src="docs/screenshots/device-humidity.png" alt="Humidity chart" width="49%">
+  <img src="docs/screenshots/device-pressure.png" alt="Pressure chart" width="49%">
+</p>
+
 ## Contents
 
+- [Screenshots](#screenshots)
 - [Requirements](#requirements)
 - [Getting started](#getting-started)
 - [Sources](#sources)
@@ -124,6 +136,7 @@ ChartLook.xojo_code             colours per quantity, series helpers, min / avg 
 App.xojo_code, MainMenuBar.xojo_menu, Build Automation.xojo_code
 Library/                        MQTT_Xojo's library (MQTT client, protobuf, Meshtastic decoding and
                                 crypto, MeshDeviceLink), a copy of github.com/Kongduino/MQTT_Xojo/Library
+docs/screenshots/               the README's screenshots
 LICENSE                         GPL-3.0
 ```
 
