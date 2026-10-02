@@ -451,7 +451,6 @@ End
 		  UUID = UUID.Lowercase
 		  mFeedID = UUID
 		  mTopic = topic + "/2/e/+/!" + UUID
-		  MessageBox mTopic
 		  
 		  Dim host As String = broker
 		  Dim port As Integer = 1883

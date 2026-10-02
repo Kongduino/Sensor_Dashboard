@@ -163,8 +163,6 @@ Protected Module Module1
 		  
 		  MyFolder = New FolderItem("/tmp/Sensor_Dashboard")
 		  If Not MyFolder.Exists Then MyFolder.CreateFolder()
-		  MessageBox "My Folder" + EndOfLine + EndOfLine + _
-		  MyFolder.NativePath
 		  MySensordbFI = MyFolder.Child("records.sqlite")
 		  If Not MySensordbFI.Exists Then
 		    LogEvents "SetupSensorFolder",  "Creating db!"
