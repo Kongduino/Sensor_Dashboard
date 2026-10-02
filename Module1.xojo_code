@@ -13,8 +13,14 @@ Protected Module Module1
 		Sub ExportMQTT(w As MQTTwindow)
 		  // Exports this window's feed: the session's MQTT rows (logType 2) from its gateway, to
 		  // Session_<id>/MQTT_<gateway>.csv (see WriteTelemetryCSV) plus the four charts as PNG
-		  Dim cmd As String = "select * from telemetry where sessionID=" + Str(MySessionNum) + _
-		  " AND logType=2 AND senderID=" + Format(Val("&H" + w.FeedID), "0") + " ORDER BY timestamp;"
+		  Dim cond As String = " AND logType=2 AND senderID=" + Format(Val("&H" + w.FeedID), "0")
+		  Dim fileName As String = w.FeedID
+		  If w.NodeFilterNum <> 0 Then // a feed of one node: its readings only, named node_via_gateway
+		    cond = cond + " AND fromID=" + Format(w.NodeFilterNum, "0")
+		    Dim h As String = "00000000" + Hex(w.NodeFilterNum)
+		    fileName = h.RightBytes(8).Lowercase + "_via_" + w.FeedID
+		  End If
+		  Dim cmd As String = "select * from telemetry where sessionID=" + Str(MySessionNum) + cond + " ORDER BY timestamp;"
 		  LogEvents "ExportMQTT", cmd
 		  Dim rs As RowSet = MySensordb.SelectSQL(cmd)
 		  If rs.RowCount = 0 Then
@@ -25,20 +31,20 @@ Protected Module Module1
 		  
 		  Dim fg As New FolderItem("Session_" + MySessionID)
 		  If Not fg.Exists Then fg.CreateFolder()
-		  Dim fi As FolderItem = fg.Child("MQTT_" + w.FeedID + ".csv")
+		  Dim fi As FolderItem = fg.Child("MQTT_" + fileName + ".csv")
 		  WriteTelemetryCSV(rs, fi, "node", True)
 		  LogEvents "ExportMQTT", "Exported successfuly file " + fi.NativePath
 		  MessageBox "Exported successfuly file " + fi.NativePath
 		  
 		  Dim p As Picture
 		  p = w.TempChart.ToPicture
-		  p.Save(fg.Child("MQTT_" + w.FeedID + "_Temperature.png"), Picture.Formats.PNG, 100)
+		  p.Save(fg.Child("MQTT_" + fileName + "_Temperature.png"), Picture.Formats.PNG, 100)
 		  p = w.RHChart.ToPicture
-		  p.Save(fg.Child("MQTT_" + w.FeedID + "_Humidity.png"), Picture.Formats.PNG, 100)
+		  p.Save(fg.Child("MQTT_" + fileName + "_Humidity.png"), Picture.Formats.PNG, 100)
 		  p = w.HPaChart.ToPicture
-		  p.Save(fg.Child("MQTT_" + w.FeedID + "_Pressure.png"), Picture.Formats.PNG, 100)
+		  p.Save(fg.Child("MQTT_" + fileName + "_Pressure.png"), Picture.Formats.PNG, 100)
 		  p = w.SNRSSIchart.ToPicture
-		  p.Save(fg.Child("MQTT_" + w.FeedID + "_RSSISNR.png"), Picture.Formats.PNG, 100)
+		  p.Save(fg.Child("MQTT_" + fileName + "_RSSISNR.png"), Picture.Formats.PNG, 100)
 		End Sub
 	#tag EndMethod
 
@@ -491,6 +497,27 @@ Protected Module Module1
 		  Wend
 		  tos.Close
 		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function HistoryRows(logType As Integer, fromID As Int64, senderID As Int64, before As Int64 = 0) As RowSet
+		  // The latest stored readings of a source, from every session, oldest first: at most 100 (what the charts
+		  // keep). fromID / senderID of -1 match any; before > 0 keeps only readings older than that time. A reading
+		  // stored twice (the same timestamp in two sessions) comes once
+		  Dim cond As String = "logType=" + Str(logType)
+		  If fromID >= 0 Then cond = cond + " AND fromID=" + Format(fromID, "0")
+		  If senderID >= 0 Then cond = cond + " AND senderID=" + Format(senderID, "0")
+		  If before > 0 Then cond = cond + " AND timestamp<" + Format(before, "0")
+		  Dim cmd As String = "select * from (select timestamp, payload, rssi, snr from telemetry where " + cond + _
+		  " group by timestamp order by timestamp desc limit 100) order by timestamp;"
+		  LogEvents "HistoryRows", cmd
+		  Try
+		    Return MySensordb.SelectSQL(cmd)
+		  Catch e As DatabaseException
+		    LogEvents "HistoryRows", "Database error: " + e.Message
+		    Return Nil
+		  End Try
+		End Function
 	#tag EndMethod
 
 

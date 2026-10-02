@@ -67,11 +67,13 @@ The fields are remembered between runs (see [Where things are kept](#where-thing
 
 | Field | Meaning |
 |---|---|
-| Broker | Host name, or `host:port` (default port 1883, no TLS) |
+| Broker | Host name, or `host:port` (default port 1883, or 8883 with TLS) |
 | Root topic | The gateway's MQTT root topic, e.g. `msh/EU_868` |
-| Node ID | The **gateway's** node ID (`aabbccdd` or `!aabbccdd`). The feed subscribes to `<root>/2/e/+/!<id>` |
+| Gateway | The **gateway's** node ID (`aabbccdd` or `!aabbccdd`). The feed subscribes to `<root>/2/e/+/!<id>` |
 | Username, Password | Broker login, if needed |
 | Keys | Channel keys, if your channels don't use the default key (see below) |
+| Node | Optional: one node only. Empty, the window follows every node whose readings the gateway uploads |
+| TLS | Connect with TLS. The connection is encrypted, but the broker's certificate isn't verified (Xojo's `SSLSocket` can't do it) |
 
 The window charts temperature, humidity, pressure and RSSI / SNR. Its title shows the connection state: *connected*, *reconnecting*, *refused: bad username or password*… It reconnects on its own if the broker drops the connection.
 
@@ -100,7 +102,7 @@ The first reading is fetched in the background; the window opens with it, titled
 | Network | The node's IP address or host name, and its port (4403) |
 | USB | The serial port (the menu lists the ports; the first USB port is preselected) |
 
-The app connects to the node the way the Meshtastic apps do: no broker, no keys, since the node decrypts its packets itself. The window is titled with the node's name and ID, and charts the **node's own sensor**: temperature, humidity and pressure. A connected node sends its sensor readings to the app **every minute**, independently of its broadcast interval on the mesh. If the node drops off (a reboot, WiFi loss), the window tries again every 30 seconds.
+The app connects to the node the way the Meshtastic apps do: no broker, no keys, since the node decrypts its packets itself. The window is titled with the node's name and ID, and charts the **node's own sensor**: temperature, humidity and pressure. The menu at the top right switches to **another node** the connected node knows, and **Request now** asks the selected node for its readings: the request goes out through the connected node, which decrypts the answer, so it charts like any other reading. A node without an environment sensor answers *NO_RESPONSE*, shown in the title bar. Readings from every node that reach the connected node are stored, so switching to a node also shows what was received from it before. A connected node sends its sensor readings to the app **every minute**, independently of its broadcast interval on the mesh. If the node drops off (a reboot, WiFi loss), the window tries again every 30 seconds.
 
 Only one window per node: a node has a single queue towards its clients, so two connections would share its readings. Adding a node that's already followed shows which connection follows it. While the app holds the USB port, no other program (the Meshtastic CLI, for example) can use it.
 
@@ -108,8 +110,8 @@ Only one window per node: a node has a single queue towards its clients, so two 
 
 - **One chart per quantity** (temperature, humidity, pressure, CO₂, VOC, PM, radio), each with a Y axis fitted to its values, the value and time under the mouse, and the same colour for a quantity in every window, in light and dark mode.
 - Each window shows the **latest values** at the top, and **min / avg / max** under each chart, over the samples shown.
-- **The X axis is a time axis:** each sample sits at the time it was taken, so gaps keep their real width. A reconnect, a node that sent nothing for an hour or a device that uploads every 10 minutes all show as such, instead of being squeezed to one step. The labels under the chart are the samples' times of day (`HH:MM` or `HH:MM:SS`), thinned out when they would overlap; the latest is always shown.
-- Charts keep the last 100 samples of each source.
+- **The X axis is a time axis:** each sample sits at the time it was taken, so gaps keep their real width. A reconnect, a node that sent nothing for an hour or a device that uploads every 10 minutes all show as such, instead of being squeezed to one step. The labels under the chart are the samples' times of day (`HH:MM` or `HH:MM:SS`, with the date in front when it isn't today), thinned out when they would overlap; the latest is always shown.
+- Charts keep the last 100 samples of each source. **A window opens with history:** the source's latest stored readings, from earlier sessions too (the same gateway and node, device or node), and live readings continue from there.
 - **Every sensor reading is stored** in SQLite (`records.sqlite`, table `telemetry`) with its source type, session, time, node or device ID and the full payload as JSON. Source types: `1` M5 AQI, `2` Meshtastic MQTT, `3` Meshtastic device. For the two Meshtastic sources, only environment telemetry counts as a reading: device metrics (battery, voltage, channel use) are neither charted nor stored, so an MQTT window's RSSI / SNR chart shows the radio values of the sensor packets.
 - Each run of the app is a **session**, with its own folder `Session_<id>/` holding `Event_Log.txt`, a log of everything the app did: connections, every packet received, every value charted.
 - **Export Data** (right-click a source) writes that source's readings for the current session, plus its charts as PNG, into the session folder:
@@ -161,11 +163,11 @@ LICENSE                         GPL-3.0
 
 ## Limitations
 
-- MQTT feeds connect without TLS, and on port 1883 unless you give `host:port`. MQTT_Xojo supports TLS, but the dashboard doesn't expose it yet.
-- An MQTT feed follows one gateway. If that gateway also uploads other nodes' environment telemetry, those readings are charted in the same window.
+- TLS encrypts an MQTT feed's connection but doesn't verify the broker's certificate.
+- An MQTT feed without a node set charts the readings of every node its gateway uploads in the same window: set **Node** to follow one.
 - All MQTT feeds share one table of channel keys: two feeds that give the same channel name different keys overwrite each other.
 - The RSSI / SNR chart stays empty for a gateway's own telemetry: a node doesn't measure the signal of its own packets.
-- Charts show the current session only; earlier sessions are in the database, not in the charts.
+- Export Data covers the current session only, while the charts also show earlier readings.
 
 ## License
 

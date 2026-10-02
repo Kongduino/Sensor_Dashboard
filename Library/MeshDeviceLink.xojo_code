@@ -157,6 +157,48 @@ Protected Class MeshDeviceLink
 		End Function
 	#tag EndMethod
 
+	#tag Method, Flags = &h0
+		Function NodeCount() As Integer
+		  // The nodes the device sent with its configuration (its NodeDB), the device itself included
+		  Return mNodeNums.Count
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function NodeLongNameAt(i As Integer) As String
+		  Return mNodeLongNames(i)
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function NodeNumAt(i As Integer) As UInt32
+		  Return mNodeNums(i)
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function NodeShortNameAt(i As Integer) As String
+		  Return mNodeShortNames(i)
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function RequestTelemetry(toNode As UInt32, kind As Integer = 3) As UInt32
+		  // Asks a node for its telemetry through the device: a TELEMETRY_APP packet (portnum 67) with want_response,
+		  // holding an empty metrics message of the kind wanted (Telemetry field: 2 device, 3 environment, 4 air
+		  // quality, 5 power). The device encrypts and sends it; the answer comes back to the device, which decrypts
+		  // it and passes it on (PacketReceived). Returns the request's packet id (0 if not connected)
+		  If Not mOpen Then Return 0
+		  Dim packetID As UInt32 = MeshNewPacketID()
+		  Dim data As String = ProtoFieldVarint(1, 67) + ProtoFieldBytes(2, ProtoFieldBytes(kind, "")) + ProtoFieldVarint(3, 1)
+		  // MeshPacket: 2 to, 4 decoded, 6 id, 9 hop_limit, 10 want_ack (the device fills in from and the channel)
+		  Dim packet As String = ProtoFieldFixed32(2, toNode) + ProtoFieldBytes(4, data) + ProtoFieldFixed32(6, packetID) + _
+		  ProtoFieldVarint(9, 3) + ProtoFieldVarint(10, 1)
+		  SendToRadio(ProtoFieldBytes(1, packet)) // ToRadio.packet
+		  Return packetID
+		End Function
+	#tag EndMethod
+
 	#tag Method, Flags = &h21
 		Private Sub ParseMyInfo(r As ProtoReader)
 		  // MyNodeInfo: 1 my_node_num
@@ -173,7 +215,7 @@ Protected Class MeshDeviceLink
 
 	#tag Method, Flags = &h21
 		Private Sub ParseNodeInfo(r As ProtoReader)
-		  // NodeInfo: 1 num, 2 user (User: 2 long_name, 3 short_name). Only the device's own entry is kept
+		  // NodeInfo: 1 num, 2 user (User: 2 long_name, 3 short_name)
 		  Dim field, wireType As Integer
 		  Dim num As UInt32
 		  Dim longName, shortName As String
@@ -196,9 +238,20 @@ Protected Class MeshDeviceLink
 		      r.Skip(wireType)
 		    End If
 		  Wend
-		  If num <> 0 And num = mMyNodeNum Then
+		  If num = 0 Then Return
+		  If num = mMyNodeNum Then
 		    mLongName = longName
 		    mShortName = shortName
+		  End If
+		  // Every node the device knows (its NodeDB), for NodeCount / NodeNumAt / NodeLongNameAt / NodeShortNameAt
+		  Dim idx As Integer = mNodeNums.IndexOf(num)
+		  If idx < 0 Then
+		    mNodeNums.Add num
+		    mNodeLongNames.Add longName
+		    mNodeShortNames.Add shortName
+		  Else
+		    mNodeLongNames(idx) = longName
+		    mNodeShortNames(idx) = shortName
 		  End If
 		End Sub
 	#tag EndMethod
@@ -256,6 +309,9 @@ Protected Class MeshDeviceLink
 		  // ToRadio.want_config_id: the device answers with my_info, node_info..., config, channels and
 		  // config_complete_id = this nonce (69420 and 69421 are special values: avoided)
 		  mConfigDone = False
+		  mNodeNums.RemoveAll
+		  mNodeLongNames.RemoveAll
+		  mNodeShortNames.RemoveAll
 		  Do
 		    mConfigNonce = System.Random.InRange(1, 2147483647)
 		  Loop Until mConfigNonce <> 69420 And mConfigNonce <> 69421
@@ -389,6 +445,18 @@ Protected Class MeshDeviceLink
 
 	#tag Property, Flags = &h21
 		Private mMyNodeNum As UInt32
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mNodeLongNames() As String
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mNodeNums() As UInt32
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mNodeShortNames() As String
 	#tag EndProperty
 
 	#tag Property, Flags = &h21

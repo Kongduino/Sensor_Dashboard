@@ -11,7 +11,7 @@ Begin DesktopWindow SetupWindow
    HasMaximizeButton=   True
    HasMinimizeButton=   True
    HasTitleBar     =   True
-   Height          =   376
+   Height          =   408
    ImplicitInstance=   True
    MacProcID       =   0
    MaximumHeight   =   344
@@ -48,7 +48,7 @@ Begin DesktopWindow SetupWindow
       HasHorizontalScrollbar=   False
       HasVerticalScrollbar=   True
       HeadingIndex    =   -1
-      Height          =   304
+      Height          =   336
       Index           =   -2147483648
       InitialValue    =   "Type	Source"
       Italic          =   False
@@ -121,7 +121,7 @@ Begin DesktopWindow SetupWindow
       FontName        =   "System"
       FontSize        =   0.0
       FontUnit        =   0
-      Height          =   272
+      Height          =   304
       Index           =   -2147483648
       InitialParent   =   ""
       Italic          =   False
@@ -321,7 +321,7 @@ Begin DesktopWindow SetupWindow
          TabPanelIndex   =   1
          TabStop         =   True
          Tooltip         =   ""
-         Top             =   314
+         Top             =   346
          Transparent     =   False
          Underline       =   False
          Visible         =   True
@@ -457,7 +457,7 @@ Begin DesktopWindow SetupWindow
          TabIndex        =   5
          TabPanelIndex   =   1
          TabStop         =   True
-         Text            =   "Node ID:"
+         Text            =   "Gateway:"
          TextAlignment   =   0
          TextColor       =   &c000000
          Tooltip         =   ""
@@ -797,6 +797,112 @@ Begin DesktopWindow SetupWindow
          Underline       =   False
          Visible         =   True
          Width           =   48
+      End
+      Begin DesktopLabel Label15
+         AllowAutoDeactivate=   True
+         Bold            =   False
+         Enabled         =   True
+         FontName        =   "System"
+         FontSize        =   0.0
+         FontUnit        =   0
+         Height          =   20
+         Index           =   -2147483648
+         InitialParent   =   "TabPanel1"
+         Italic          =   False
+         Left            =   352
+         LockBottom      =   False
+         LockedInPosition=   False
+         LockLeft        =   True
+         LockRight       =   False
+         LockTop         =   True
+         Multiline       =   False
+         Scope           =   0
+         Selectable      =   False
+         TabIndex        =   19
+         TabPanelIndex   =   1
+         TabStop         =   True
+         Text            =   "Node:"
+         TextAlignment   =   0
+         TextColor       =   &c000000
+         Tooltip         =   "Only this node's readings (empty: every node the gateway uploads)"
+         Top             =   314
+         Transparent     =   False
+         Underline       =   False
+         Visible         =   True
+         Width           =   77
+      End
+      Begin DesktopTextField tfMQTTNodeFilter
+         AllowAutoDeactivate=   True
+         AllowFocusRing  =   True
+         AllowSpellChecking=   False
+         AllowTabs       =   False
+         BackgroundColor =   &cFFFFFF
+         Bold            =   False
+         Enabled         =   True
+         FontName        =   "System"
+         FontSize        =   0.0
+         FontUnit        =   0
+         Format          =   ""
+         HasBorder       =   True
+         Height          =   22
+         Hint            =   "optional: one node, e.g. aabbccdd"
+         Index           =   -2147483648
+         InitialParent   =   "TabPanel1"
+         Italic          =   False
+         Left            =   441
+         LockBottom      =   False
+         LockedInPosition=   False
+         LockLeft        =   True
+         LockRight       =   False
+         LockTop         =   True
+         MaximumCharactersAllowed=   0
+         Password        =   False
+         ReadOnly        =   False
+         Scope           =   0
+         TabIndex        =   20
+         TabPanelIndex   =   1
+         TabStop         =   True
+         Text            =   ""
+         TextAlignment   =   0
+         TextColor       =   &c000000
+         Tooltip         =   "Only this node's readings (empty: every node the gateway uploads)"
+         Top             =   314
+         Transparent     =   False
+         Underline       =   False
+         ValidationMask  =   ""
+         Visible         =   True
+         Width           =   222
+      End
+      Begin DesktopCheckBox cbMQTTTLS
+         AllowAutoDeactivate=   True
+         Bold            =   False
+         Caption         =   "TLS"
+         Enabled         =   True
+         FontName        =   "System"
+         FontSize        =   0.0
+         FontUnit        =   0
+         Height          =   20
+         Index           =   -2147483648
+         InitialParent   =   "TabPanel1"
+         Italic          =   False
+         Left            =   441
+         LockBottom      =   False
+         LockedInPosition=   False
+         LockLeft        =   True
+         LockRight       =   False
+         LockTop         =   True
+         Scope           =   0
+         TabIndex        =   21
+         TabPanelIndex   =   1
+         TabStop         =   True
+         Tooltip         =   "Connect with TLS (port 8883 unless the broker field says host:port). The connection is encrypted, but the broker's certificate isn't verified"
+         Top             =   346
+         Transparent     =   False
+         Underline       =   False
+         Value           =   False
+         Visible         =   True
+         VisualState     =   0
+         Width           =   100
       End
       Begin DesktopTabPanel tpConnectionTypes
          AllowAutoDeactivate=   True
@@ -1203,6 +1309,8 @@ End
 		  If js.HasKey("mqtt_username") Then tfMQTTUsername.Text = js.Value("mqtt_username").StringValue
 		  If js.HasKey("mqtt_password") Then tfMQTTUserPassword.Text = js.Value("mqtt_password").StringValue
 		  If js.HasKey("mqtt_keys") Then tfMQTTKeys.Text = js.Value("mqtt_keys").StringValue
+		  If js.HasKey("mqtt_node_filter") Then tfMQTTNodeFilter.Text = js.Value("mqtt_node_filter").StringValue
+		  If js.HasKey("mqtt_tls") Then cbMQTTTLS.Value = js.Value("mqtt_tls").BooleanValue
 		  If js.HasKey("aqi_device_id") Then tfAQIID.Text = js.Value("aqi_device_id").StringValue
 		  If js.HasKey("device_host") Then tfNetworkHost.Text = js.Value("device_host").StringValue
 		  If js.HasKey("device_port") Then tfNetworkPort.Text = js.Value("device_port").StringValue
@@ -1262,6 +1370,8 @@ End
 		  js.Value("mqtt_username") = tfMQTTUsername.Text.Trim
 		  js.Value("mqtt_password") = tfMQTTUserPassword.Text.Trim
 		  js.Value("mqtt_keys") = tfMQTTKeys.Text.Trim
+		  js.Value("mqtt_node_filter") = tfMQTTNodeFilter.Text.Trim
+		  js.Value("mqtt_tls") = cbMQTTTLS.Value
 		  js.Value("aqi_device_id") = tfAQIID.Text.Trim
 		  js.Value("device_host") = tfNetworkHost.Text.Trim
 		  js.Value("device_port") = tfNetworkPort.Text.Trim
@@ -1459,11 +1569,26 @@ End
 		    Return
 		  End If
 		  
+		  // Optional node filter: 8 hex digits, with or without "!"
+		  Dim nodeFilter As String = tfMQTTNodeFilter.Text.Trim().Lowercase()
+		  If nodeFilter.LeftBytes(1) = "!" Then nodeFilter = nodeFilter.MiddleBytes(1)
+		  If nodeFilter <> "" And (nodeFilter.Length <> 8 Or Val("&H" + nodeFilter) = 0) Then
+		    MessageBox "Node: """ + tfMQTTNodeFilter.Text.Trim() + """ is not a node id (8 hex digits, e.g. aabbccdd)"
+		    tfMQTTNodeFilter.SelectionStart = 0
+		    tfMQTTNodeFilter.SelectionLength = tfMQTTNodeFilter.Text.Length
+		    ShakeWindow()
+		    Return
+		  End If
+		  Dim tls As Boolean = cbMQTTTLS.Value
+		  
 		  SaveSetupFields
 		  Dim w As New MQTTwindow
-		  w.Setup(UUID, broker, username, pwd, topic, keys)
+		  w.Setup(UUID, broker, username, pwd, topic, keys, nodeFilter, tls)
 		  MyMQTTwindows.Add w
-		  lbDataSources.AddRow "MQTT", topic + "/" + UUID, Str(MyMQTTwindows.Count-1)
+		  Dim sourceText As String = topic + "/" + UUID
+		  If nodeFilter <> "" Then sourceText = "!" + nodeFilter + " via " + sourceText
+		  If tls Then sourceText = sourceText + " (TLS)"
+		  lbDataSources.AddRow "MQTT", sourceText, Str(MyMQTTwindows.Count-1)
 		  
 		End Sub
 	#tag EndEvent
@@ -1537,6 +1662,18 @@ End
 	#tag EndEvent
 #tag EndEvents
 #tag Events tfMQTTUserPassword
+	#tag Event
+		Sub KeyUp(key As String)
+		  If Key = Chr(13) And btAddMQTT.Enabled Then btAddMQTT.Press()
+		End Sub
+	#tag EndEvent
+	#tag Event
+		Function KeyDown(key As String) As Boolean
+		  If Key = Chr(13) Then Return True
+		End Function
+	#tag EndEvent
+#tag EndEvents
+#tag Events tfMQTTNodeFilter
 	#tag Event
 		Sub KeyUp(key As String)
 		  If Key = Chr(13) And btAddMQTT.Enabled Then btAddMQTT.Press()

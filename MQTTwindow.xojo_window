@@ -394,6 +394,13 @@ End
 
 
 	#tag Method, Flags = &h0
+		Function NodeFilterNum() As UInt32
+		  // The one node this feed follows, 0 for every node of the gateway
+		  Return mNodeFilter
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Function FeedID() As String
 		  // The gateway id this window follows, as 8 lowercase hex digits without "!"
 		  Return mFeedID
@@ -414,6 +421,8 @@ End
 		  Dim type As String
 		  type = js.Lookup("type", "?")
 		  If type = "telemetry" Then
+		    // A feed of one node: the other nodes' readings are left out
+		    If mNodeFilter <> 0 And js.Lookup("from", 0).UInt64Value <> mNodeFilter Then Return
 		    Dim rssi, snr, temp, rh, pa As Double
 		    Dim payload As JSONItem
 		    Dim TS As Integer
@@ -448,14 +457,49 @@ End
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
+		Private Sub LoadHistory()
+		  // Earlier readings of this feed (its gateway, and its node if filtered) from the database, so the charts
+		  // start with the recent past; the time axis shows the gap until the first live reading
+		  Dim nodeArg As Int64 = -1
+		  If mNodeFilter <> 0 Then nodeArg = mNodeFilter
+		  Dim gatewayArg As Int64 = Val("&H" + mFeedID)
+		  Dim rs As RowSet = HistoryRows(2, nodeArg, gatewayArg)
+		  If rs = Nil Then Return
+		  Dim n As Integer
+		  mLoadingHistory = True
+		  While Not rs.AfterLastRow
+		    Dim pl As JSONItem
+		    Try
+		      pl = New JSONItem(rs.Column("payload").StringValue.ReplaceAllBytes("'", """"))
+		    Catch e As JSONException
+		      pl = Nil
+		    End Try
+		    If pl <> Nil And pl.HasKey("temperature") Then
+		      updateData(rs.Column("rssi").DoubleValue, rs.Column("snr").DoubleValue, pl.Lookup("temperature", -255).DoubleValue, _
+		      pl.Lookup("relative_humidity", -255).DoubleValue, pl.Lookup("barometric_pressure", -255).DoubleValue, rs.Column("timestamp").IntegerValue)
+		      n = n + 1
+		    End If
+		    rs.MoveToNextRow
+		  Wend
+		  mLoadingHistory = False
+		  LogEvents "MQTTwindow", "History: " + Str(n) + " earlier reading(s) loaded"
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
 		Private Sub SetStatus(status As String)
 		  // Connection state in the title bar
-		  Self.Title = "MQTT Feed (" + mFeedID + ") - " + status
+		  Dim feed As String = mFeedID
+		  If mNodeFilter <> 0 Then
+		    Dim h As String = "00000000" + Hex(mNodeFilter)
+		    feed = "!" + h.RightBytes(8).Lowercase + " via " + mFeedID
+		  End If
+		  Self.Title = "MQTT Feed (" + feed + ") - " + status + If(mTLS, " (TLS)", "")
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub Setup(UUID As String, broker As String, username As String, pwd As String, topic As String, keys As String = "")
+		Sub Setup(UUID As String, broker As String, username As String, pwd As String, topic As String, keys As String = "", nodeFilter As String = "", tls As Boolean = False)
 		  // Same feed as the former meshtastic_protobuf_to_json.py: <topic>/2/e/+/!<gateway id>, on port 1883
 		  // without TLS. broker can also be "host:port". keys: see ParseChannelKeys (empty: AQ== on every channel)
 		  Dim names(), psks() As String
@@ -477,21 +521,26 @@ End
 		  UUID = UUID.Lowercase
 		  mFeedID = UUID
 		  mTopic = topic + "/2/e/+/!" + UUID
+		  // Optional: one node only (8 hex digits, checked by the Setup window)
+		  If nodeFilter <> "" Then mNodeFilter = Val("&H" + nodeFilter)
+		  mTLS = tls
 		  
 		  Dim host As String = broker
-		  Dim port As Integer = 1883
+		  Dim port As Integer = If(tls, 8883, 1883)
 		  Dim colon As Integer = broker.IndexOf(":")
 		  If colon > 0 Then
 		    host = broker.Left(colon)
 		    port = Val(broker.Middle(colon + 1))
-		    If port <= 0 Then port = 1883
+		    If port <= 0 Then port = If(tls, 8883, 1883)
 		  End If
 		  
 		  // A client id of its own for each window: a broker drops a connection when another one uses the same id
 		  Dim clientID As String = "SDash-" + UUID.Left(8) + "-" + Format(System.Random.InRange(0, 999999), "000000")
-		  LogEvents "MQTTwindow Setup", "Connecting to " + host + ":" + Str(port) + " as " + username + " (" + clientID + "), topic " + mTopic
+		  LogEvents "MQTTwindow Setup", "Connecting to " + host + ":" + Str(port) + If(tls, " with TLS", "") + " as " + username + " (" + clientID + "), topic " + mTopic + If(mNodeFilter <> 0, ", node !" + nodeFilter + " only", "")
 		  SetStatus("connecting")
 		  MQTTClient1.SetCredentials(username, pwd)
+		  // TLS encrypts the connection, but Xojo's SSLSocket doesn't verify the broker's certificate
+		  MQTTClient1.SetTLS(tls)
 		  MQTTClient1.SetAutoReconnect(True, 60, 86400) // like paho's loop_forever: keep trying (gives up after a day)
 		  MQTTClient1.Connect(host, port, clientID)
 		  
@@ -517,6 +566,7 @@ End
 		  SNRSSIchart.AddTimes snrTimes
 		  SNRSSIchart.AddDatasets LineSet("RSSI", "rssi", myRSSI, " dBm"), LineSet("SNR", "snr", mySNR, " dB")
 		  
+		  LoadHistory
 		  Self.Show()
 		  
 		End Sub
@@ -526,7 +576,7 @@ End
 		Sub updateData(rssi As Double, snr As Double, temp As Double, rh As Double, pa As Double, TS As Integer)
 		  // One telemetry sample; -255 marks a value the packet didn't have
 		  Dim d As New DateTime(TS)
-		  Dim tsmp As String = Format(d.Hour, "00") + ":" + Format(d.Minute, "00") + ":" + Format(d.Second, "00")
+		  Dim tsmp As String = TimeLabel(TS, True)
 		  If rh <> -255 And temp <> -255 And pa <> -255 Then
 		    dhtLabels.Add tsmp
 		    dhtTimes.Add TS
@@ -535,23 +585,23 @@ End
 		    paLabels.Add tsmp
 		    myPA.Add pa
 		    
-		    LogEvents "MQTTwindow UpdateData", "TS: " + Str(TS)
-		    LogEvents "MQTTwindow UpdateData", "T°: " + Str(temp)
-		    LogEvents "MQTTwindow UpdateData", "RH: " + Str(rh)
-		    LogEvents "MQTTwindow UpdateData", "PA: " + Str(pa)
+		    If Not mLoadingHistory Then LogEvents "MQTTwindow UpdateData", "TS: " + Str(TS)
+		    If Not mLoadingHistory Then LogEvents "MQTTwindow UpdateData", "T°: " + Str(temp)
+		    If Not mLoadingHistory Then LogEvents "MQTTwindow UpdateData", "RH: " + Str(rh)
+		    If Not mLoadingHistory Then LogEvents "MQTTwindow UpdateData", "PA: " + Str(pa)
 		  Else
-		    LogEvents "MQTTwindow UpdateData", "Incomplete DHT Data!"
+		    If Not mLoadingHistory Then LogEvents "MQTTwindow UpdateData", "Incomplete DHT Data!"
 		  End If
 		  
 		  If snr <> -255 And rssi <> -255 Then
 		    snrLabels.Add tsmp
 		    snrTimes.Add TS
-		    LogEvents "MQTTwindow UpdateData", "RSSI: " + Str(rssi)
-		    LogEvents "MQTTwindow UpdateData", "SNR: " + Str(snr)
+		    If Not mLoadingHistory Then LogEvents "MQTTwindow UpdateData", "RSSI: " + Str(rssi)
+		    If Not mLoadingHistory Then LogEvents "MQTTwindow UpdateData", "SNR: " + Str(snr)
 		    myRSSI.Add rssi
 		    mySNR.Add snr
 		  Else
-		    LogEvents "MQTTwindow UpdateData", "Incomplete RSSI/SNR Data!" + EndOfLine
+		    If Not mLoadingHistory Then LogEvents "MQTTwindow UpdateData", "Incomplete RSSI/SNR Data!" + EndOfLine
 		  End If
 		  
 		  // Keep the last kMaxSamples samples: drop the oldest ones
@@ -623,6 +673,18 @@ End
 
 	#tag Property, Flags = &h21
 		Private mFeedID As String
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mLoadingHistory As Boolean
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mNodeFilter As UInt32
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mTLS As Boolean
 	#tag EndProperty
 
 	#tag Property, Flags = &h21

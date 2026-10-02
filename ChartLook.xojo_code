@@ -120,6 +120,20 @@ Protected Module ChartLook
 		End Function
 	#tag EndMethod
 
+	#tag Method, Flags = &h0
+		Function TimeLabel(ts As Integer, withSeconds As Boolean) As String
+		  // A sample's label: HH:MM[:SS], with the date in front (dd/MM) when it isn't today (readings from earlier sessions)
+		  Dim d As New DateTime(ts)
+		  Dim t As String = Format(d.Hour, "00") + ":" + Format(d.Minute, "00")
+		  If withSeconds Then t = t + ":" + Format(d.Second, "00")
+		  Dim today As DateTime = DateTime.Now
+		  If d.Day <> today.Day Or d.Month <> today.Month Or d.Year <> today.Year Then
+		    t = Format(d.Day, "00") + "/" + Format(d.Month, "00") + " " + t
+		  End If
+		  Return t
+		End Function
+	#tag EndMethod
+
 
 
 	#tag ViewBehavior

@@ -56,7 +56,69 @@ Begin DesktopWindow MeshtasticWindow
       Transparent     =   False
       Underline       =   False
       Visible         =   True
-      Width           =   788
+      Width           =   420
+   End
+   Begin DesktopPopupMenu pmChartNode
+      AllowAutoDeactivate=   True
+      Bold            =   False
+      Enabled         =   True
+      FontName        =   "System"
+      FontSize        =   0.0
+      FontUnit        =   0
+      Height          =   22
+      Index           =   -2147483648
+      InitialParent   =   ""
+      InitialValue    =   ""
+      Italic          =   False
+      Left            =   450
+      LockBottom      =   False
+      LockedInPosition=   False
+      LockLeft        =   False
+      LockRight       =   True
+      LockTop         =   True
+      Scope           =   0
+      SelectedRowIndex=   -1
+      TabIndex        =   2
+      TabPanelIndex   =   0
+      TabStop         =   True
+      Tooltip         =   "Whose sensor to chart: the connected node, or another node it knows"
+      Top             =   12
+      Transparent     =   False
+      Underline       =   False
+      Visible         =   True
+      Width           =   250
+   End
+   Begin DesktopButton btRequest
+      AllowAutoDeactivate=   True
+      Bold            =   False
+      Cancel          =   False
+      Caption         =   "Request now"
+      Default         =   False
+      Enabled         =   True
+      FontName        =   "System"
+      FontSize        =   0.0
+      FontUnit        =   0
+      Height          =   22
+      Index           =   -2147483648
+      InitialParent   =   ""
+      Italic          =   False
+      Left            =   708
+      LockBottom      =   False
+      LockedInPosition=   False
+      LockLeft        =   False
+      LockRight       =   True
+      LockTop         =   True
+      MacButtonStyle  =   0
+      Scope           =   0
+      TabIndex        =   3
+      TabPanelIndex   =   0
+      TabStop         =   True
+      Tooltip         =   "Ask the selected node for its environment readings now (through the connected node)"
+      Top             =   12
+      Transparent     =   False
+      Underline       =   False
+      Visible         =   True
+      Width           =   100
    End
    Begin DesktopTabPanel TabPanel1
       AllowAutoDeactivate=   True
@@ -315,14 +377,16 @@ End
 
 	#tag Method, Flags = &h0
 		Function FeedID() As String
-		  // The connected node as 8 lowercase hex digits without "!" (export file names)
-		  Return NodeID.MiddleBytes(1)
+		  // The charted node (the connected one unless another is selected) as 8 lowercase hex digits without "!":
+		  // what Export Data exports
+		  Dim h As String = "00000000" + Hex(mChartNode)
+		  Return h.RightBytes(8).Lowercase
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
 		Private Sub HandlePacketJSON(jsonText As String)
-		  // Only the connected node's own environment telemetry is charted (its own sensor)
+		  // Environment telemetry (sensor readings) of any node is stored; the selected node's is charted
 		  Dim js As JSONItem
 		  Try
 		    js = New JSONItem(jsonText)
@@ -331,12 +395,23 @@ End
 		    Return
 		  End Try
 		  If js.Lookup("type", "?").StringValue <> "telemetry" Then Return
-		  If js.Lookup("from", 0).UInt64Value <> mMyNum Then Return
 		  Dim payload As JSONItem = js.Lookup("payload", Nil)
 		  If payload = Nil Or Not payload.HasKey("temperature") Then Return // device metrics, not the sensor
+		  Dim fromNum As UInt32 = js.Lookup("from", 0).UInt64Value
 		  
 		  Dim TS As Integer = js.Lookup("timestamp", 0).IntegerValue
 		  If TS <= 0 Then TS = DateTime.Now.SecondsFrom1970 // own packets may have no rx_time
+		  
+		  // SQLite: logType 3 = Meshtastic device, fromID the node that measured, senderID the connected node.
+		  // At each connection the device replays the last packet of every node: stored once per node and time
+		  Dim key As String = Str(fromNum)
+		  If mLastStored = Nil Then mLastStored = New Dictionary
+		  If TS > mLastStored.Lookup(key, 0).IntegerValue Then
+		    mLastStored.Value(key) = TS
+		    LogTelemetry(3, Format(fromNum, "0"), Format(mMyNum, "0"), Str(TS), payload.ToString, -255, -255, MySessionNum)
+		  End If
+		  
+		  If fromNum <> mChartNode Then Return
 		  Dim temp As Double = payload.Lookup("temperature", -255).DoubleValue
 		  Dim rh As Double = payload.Lookup("relative_humidity", -255).DoubleValue
 		  Dim pa As Double = payload.Lookup("barometric_pressure", -255).DoubleValue
@@ -344,10 +419,10 @@ End
 		  TempChart.Refresh()
 		  RHChart.Refresh()
 		  HPaChart.Refresh()
-		  
-		  // SQLite: logType 3 = Meshtastic device; the node itself as fromID and senderID
-		  Dim nodeNum As String = Format(mMyNum, "0")
-		  LogTelemetry(3, nodeNum, nodeNum, Str(TS), payload.ToString, -255, -255, MySessionNum)
+		  If mRequested = fromNum Then
+		    mRequested = 0
+		    SetStatus("reading received")
+		  End If
 		End Sub
 	#tag EndMethod
 
@@ -378,6 +453,7 @@ End
 		  LogSource("connected to " + NodeID + " """ + Owner + """ (" + sender.ShortName + ")")
 		  If mStarted Then
 		    SetStatus("connected")
+		    FillNodeMenu(sender) // the node may know new nodes since
 		    Return
 		  End If
 		  // One window per node: the node has a single queue towards its clients, so two connections
@@ -397,6 +473,9 @@ End
 		  
 		  mStarted = True
 		  SetupCharts
+		  mChartNode = mMyNum
+		  FillNodeMenu(sender)
+		  LoadHistory
 		  SetStatus("connected")
 		  Self.Show()
 		  SetupWindow.AddDeviceSource(Self)
@@ -415,6 +494,16 @@ End
 		  Dim summary As String = MeshPacketSummary(envelope, jsonText, packetKey)
 		  If summary = "" Then Return
 		  LogSource(summary)
+		  // An ACK / NAK for our telemetry request: NO_RESPONSE means the node has nothing to answer with
+		  Dim requestID, routeFrom, routeTo As UInt32
+		  Dim errorCode As Integer
+		  If MeshTakeRouting(requestID, routeFrom, routeTo, errorCode) Then
+		    If requestID = mRequestID And mRequestID <> 0 And errorCode <> 0 Then
+		      mRequested = 0
+		      SetStatus(NodeLabel(mChartNode) + ": " + MeshRoutingErrorName(errorCode))
+		      LogSource("Telemetry request " + Str(requestID) + ": " + MeshRoutingErrorName(errorCode))
+		    End If
+		  End If
 		  If jsonText <> "" Then
 		    LogSource("json_data: " + jsonText)
 		    HandlePacketJSON(jsonText)
@@ -427,6 +516,98 @@ End
 		  // Event log lines of this window, tagged with its connection (host:port or serial port)
 		  LogEvents "Meshtastic[" + mSourceName + "]", txt
 		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Sub ClearCharts()
+		  // Empties the sample arrays in place (the charts hold references to them)
+		  dhtLabels.RemoveAll
+		  dhtTimes.RemoveAll
+		  myRH.RemoveAll
+		  myTemp.RemoveAll
+		  paLabels.RemoveAll
+		  myPA.RemoveAll
+		  laAverageTemp.Text = ""
+		  laAverageRH.Text = ""
+		  laAverageHPa.Text = ""
+		  laLatest.Text = NodeLabel(mChartNode) + ": waiting for a reading…"
+		  TempChart.Refresh()
+		  RHChart.Refresh()
+		  HPaChart.Refresh()
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Sub FillNodeMenu(link As MeshDeviceLink)
+		  // The connected node first (its own sensor), then the other nodes it knows, by name
+		  Dim names() As String
+		  Dim nums() As UInt32
+		  For i As Integer = 0 To link.NodeCount - 1
+		    If link.NodeNumAt(i) <> mMyNum Then
+		      Dim nm As String = link.NodeLongNameAt(i)
+		      If nm = "" Then nm = link.NodeShortNameAt(i)
+		      names.Add nm.Lowercase + Chr(1) + nm
+		      nums.Add link.NodeNumAt(i)
+		    End If
+		  Next
+		  names.SortWith(nums)
+		  mMenuNodes.RemoveAll
+		  mSuppressMenu = True
+		  pmChartNode.RemoveAllRows
+		  pmChartNode.AddRow "Own sensor: " + Owner
+		  mMenuNodes.Add mMyNum
+		  For i As Integer = 0 To nums.LastIndex
+		    Dim h As String = "00000000" + Hex(nums(i))
+		    pmChartNode.AddRow names(i).NthField(Chr(1), 2) + "  (!" + h.RightBytes(8).Lowercase + ")"
+		    mMenuNodes.Add nums(i)
+		  Next
+		  pmChartNode.SelectedRowIndex = Max(0, mMenuNodes.IndexOf(mChartNode))
+		  mSuppressMenu = False
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Sub LoadHistory()
+		  // Earlier readings of the charted node from the database (every session), so the charts start with the recent past
+		  Dim nodeArg As Int64 = mChartNode
+		  Dim rs As RowSet = HistoryRows(3, nodeArg, -1)
+		  If rs = Nil Then Return
+		  Dim n As Integer
+		  mLoadingHistory = True
+		  While Not rs.AfterLastRow
+		    Dim pl As JSONItem
+		    Try
+		      pl = New JSONItem(rs.Column("payload").StringValue.ReplaceAllBytes("'", """"))
+		    Catch e As JSONException
+		      pl = Nil
+		    End Try
+		    If pl <> Nil And pl.HasKey("temperature") Then
+		      updateData(pl.Lookup("temperature", -255).DoubleValue, pl.Lookup("relative_humidity", -255).DoubleValue, _
+		      pl.Lookup("barometric_pressure", -255).DoubleValue, rs.Column("timestamp").IntegerValue)
+		      n = n + 1
+		    End If
+		    rs.MoveToNextRow
+		  Wend
+		  mLoadingHistory = False
+		  TempChart.Refresh()
+		  RHChart.Refresh()
+		  HPaChart.Refresh()
+		  LogSource("History of " + NodeLabel(mChartNode) + ": " + Str(n) + " earlier reading(s) loaded")
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Function NodeLabel(num As UInt32) As String
+		  // "!aabbccdd", with the node's short name if the device knows it
+		  Dim h As String = "00000000" + Hex(num)
+		  Dim id As String = "!" + h.RightBytes(8).Lowercase
+		  If mLink <> Nil Then
+		    For i As Integer = 0 To mLink.NodeCount - 1
+		      If mLink.NodeNumAt(i) = num And mLink.NodeShortNameAt(i) <> "" Then Return mLink.NodeShortNameAt(i) + " (" + id + ")"
+		    Next
+		  End If
+		  Return id
+		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
@@ -529,7 +710,7 @@ End
 		Sub updateData(temp As Double, rh As Double, pa As Double, TS As Integer)
 		  // One sample of the node's own sensor; -255 marks a value the packet didn't have
 		  Dim d As New DateTime(TS)
-		  Dim tsmp As String = Format(d.Hour, "00") + ":" + Format(d.Minute, "00") + ":" + Format(d.Second, "00")
+		  Dim tsmp As String = TimeLabel(TS, True)
 		  If rh <> -255 And temp <> -255 And pa <> -255 Then
 		    dhtLabels.Add tsmp
 		    dhtTimes.Add TS
@@ -537,12 +718,12 @@ End
 		    myTemp.Add temp
 		    paLabels.Add tsmp
 		    myPA.Add pa
-		    LogEvents "Meshtastic[" + mSourceName + "] UpdateData", "TS: " + Str(TS)
-		    LogEvents "Meshtastic[" + mSourceName + "] UpdateData", "T°: " + Str(temp)
-		    LogEvents "Meshtastic[" + mSourceName + "] UpdateData", "RH: " + Str(rh)
-		    LogEvents "Meshtastic[" + mSourceName + "] UpdateData", "PA: " + Str(pa)
+		    If Not mLoadingHistory Then LogEvents "Meshtastic[" + mSourceName + "] UpdateData", "TS: " + Str(TS)
+		    If Not mLoadingHistory Then LogEvents "Meshtastic[" + mSourceName + "] UpdateData", "T°: " + Str(temp)
+		    If Not mLoadingHistory Then LogEvents "Meshtastic[" + mSourceName + "] UpdateData", "RH: " + Str(rh)
+		    If Not mLoadingHistory Then LogEvents "Meshtastic[" + mSourceName + "] UpdateData", "PA: " + Str(pa)
 		  Else
-		    LogEvents "Meshtastic[" + mSourceName + "] UpdateData", "Incomplete DHT Data!"
+		    If Not mLoadingHistory Then LogEvents "Meshtastic[" + mSourceName + "] UpdateData", "Incomplete DHT Data!"
 		  End If
 		  
 		  // Keep the last kMaxSamples samples: drop the oldest ones
@@ -571,7 +752,7 @@ End
 		  
 		  // The latest values at a glance
 		  If myTemp.Count > 0 Then
-		    laLatest.Text = Format(LastOf(myTemp), "-0.0") + " °C   ·   " + Format(LastOf(myRH), "0.0") + " %   ·   " + _
+		    laLatest.Text = If(mChartNode <> mMyNum, NodeLabel(mChartNode) + "   ", "") + Format(LastOf(myTemp), "-0.0") + " °C   ·   " + Format(LastOf(myRH), "0.0") + " %   ·   " + _
 		    Format(LastOf(myPA), "0.0") + " hPa      " + tsmp
 		  End If
 		End Sub
@@ -650,6 +831,34 @@ End
 		Private mUseSerial As Boolean
 	#tag EndProperty
 
+	#tag Property, Flags = &h21
+		Private mChartNode As UInt32
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mLastStored As Dictionary
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mLoadingHistory As Boolean
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mMenuNodes() As UInt32
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mRequested As UInt32
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mRequestID As UInt32
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mSuppressMenu As Boolean
+	#tag EndProperty
+
 
 	#tag Constant, Name = kMaxSamples, Type = Double, Dynamic = False, Default = \"100", Scope = Private
 	#tag EndConstant
@@ -657,6 +866,32 @@ End
 
 #tag EndWindowCode
 
+#tag Events pmChartNode
+	#tag Event
+		Sub SelectionChanged(item As DesktopMenuItem)
+		  // Another node to chart: its readings from the database, then live ones
+		  If mSuppressMenu Or Me.SelectedRowIndex < 0 Or Me.SelectedRowIndex > mMenuNodes.LastIndex Then Return
+		  If mMenuNodes(Me.SelectedRowIndex) = mChartNode Then Return
+		  mChartNode = mMenuNodes(Me.SelectedRowIndex)
+		  mRequested = 0
+		  ClearCharts
+		  LoadHistory
+		  SetStatus("charting " + NodeLabel(mChartNode))
+		End Sub
+	#tag EndEvent
+#tag EndEvents
+#tag Events btRequest
+	#tag Event
+		Sub Pressed()
+		  // Environment readings of the selected node, now: the request goes out through the connected node
+		  If mLink = Nil Or Not mLink.IsConfigured Then Return
+		  mRequestID = mLink.RequestTelemetry(mChartNode)
+		  mRequested = mChartNode
+		  LogSource("Telemetry requested from " + NodeLabel(mChartNode) + " (packet " + Str(mRequestID) + ")")
+		  SetStatus("requested from " + NodeLabel(mChartNode))
+		End Sub
+	#tag EndEvent
+#tag EndEvents
 #tag Events laAverageRH
 	#tag Event
 		Sub Opening()

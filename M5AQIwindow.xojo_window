@@ -392,6 +392,7 @@ End
 		  // updateTime changes, so each new reading shows up within a minute
 		  DataAcquisitionTimer.Period = Min(periodicity, 60) * 1000
 		  
+		  LoadHistory
 		  UpdateData()
 		  Self.Show()
 		  
@@ -435,7 +436,7 @@ End
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub UpdateData()
+		Sub UpdateData(store As Boolean = True)
 		  Dim sen55, scd40 As JSONItem
 		  Dim pm1, pm2, pm4, pm10, sen55RH, sen55Temp, sen55VOCdata As Double
 		  Dim scd40RH, scd40Temp, scd40CO2data As Double
@@ -467,8 +468,8 @@ End
 		  SEN55PM10.Add pm10
 		  
 		  // Label: the time of the reading (updateTime, seconds since 1970) as HH:MM
-		  Dim d As New DateTime(updateTime.Val())
-		  TemperatureLabels.Add Format(d.Hour, "00") + ":" + Format(d.Minute, "00")
+		  // store = False: a reading from the database (LoadHistory), charted but neither logged nor stored again
+		  TemperatureLabels.Add TimeLabel(updateTime.Val, False)
 		  sampleTimes.Add updateTime.Val
 		  mLastUpdateTime = updateTime
 		  
@@ -499,16 +500,16 @@ End
 		  PMchart.RemoveAllLabels()
 		  PMchart.AddLabels TemperatureLabels
 		  
-		  LogEvents "M5AQIwindow", "SEN55 T°: " + Str(sen55Temp)
-		  LogEvents "M5AQIwindow", "SCD40 T°: " + Str(scd40Temp)
-		  LogEvents "M5AQIwindow", "SEN55 H%: " + Str(sen55RH)
-		  LogEvents "M5AQIwindow", "SCD40 H%: " + Str(scd40RH)
-		  LogEvents "M5AQIwindow", "SEN55 VOC: " + Str(sen55VOCdata)
-		  LogEvents "M5AQIwindow", "SCD40 CO2: " + Str(scd40CO2data)
-		  LogEvents "M5AQIwindow", "SEN55 PM1.0: " + Str(pm1)
-		  LogEvents "M5AQIwindow", "SEN55 PM2.5: " + Str(pm2)
-		  LogEvents "M5AQIwindow", "SEN55 PM4.0: " + Str(pm4)
-		  LogEvents "M5AQIwindow", "SEN55 PM10.0: " + Str(pm10)
+		  If store Then LogEvents "M5AQIwindow", "SEN55 T°: " + Str(sen55Temp)
+		  If store Then LogEvents "M5AQIwindow", "SCD40 T°: " + Str(scd40Temp)
+		  If store Then LogEvents "M5AQIwindow", "SEN55 H%: " + Str(sen55RH)
+		  If store Then LogEvents "M5AQIwindow", "SCD40 H%: " + Str(scd40RH)
+		  If store Then LogEvents "M5AQIwindow", "SEN55 VOC: " + Str(sen55VOCdata)
+		  If store Then LogEvents "M5AQIwindow", "SCD40 CO2: " + Str(scd40CO2data)
+		  If store Then LogEvents "M5AQIwindow", "SEN55 PM1.0: " + Str(pm1)
+		  If store Then LogEvents "M5AQIwindow", "SEN55 PM2.5: " + Str(pm2)
+		  If store Then LogEvents "M5AQIwindow", "SEN55 PM4.0: " + Str(pm4)
+		  If store Then LogEvents "M5AQIwindow", "SEN55 PM10.0: " + Str(pm10)
 		  
 		  laAverageTemp55.Text = StatsText("SEN55", SEN55temperature, " °C", "-0.0")
 		  laAverageTemp40.Text = StatsText("SCD40", SCD40temperature, " °C", "-0.0")
@@ -536,7 +537,7 @@ End
 		    pl.Value("scd40_" + k) = scd40.Value(k)
 		  Next
 		  Dim deviceNum As String = Format(Val("&H" + MyID), "0")
-		  LogTelemetry(1, deviceNum, deviceNum, updateTime, pl.ToString, -255, -255, MySessionNum)
+		  If store Then LogTelemetry(1, deviceNum, deviceNum, updateTime, pl.ToString, -255, -255, MySessionNum)
 		  
 		End Sub
 	#tag EndMethod
@@ -597,6 +598,47 @@ End
 		Private Sub HandleError(sender As URLConnection, e As RuntimeException)
 		  mBusy = False
 		  ReportProblem("network error: " + e.Message)
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Sub LoadHistory()
+		  // Earlier readings of this device from the database (older than the current one), charted before it so the
+		  // charts start with the recent past. Each stored payload (flat keys sen55_..., scd40_...) is turned back
+		  // into the nested form UpdateData reads
+		  Dim currentValues As JSONItem = Values
+		  Dim currentTime As String = updateTime
+		  Dim deviceNum As Int64 = Val("&H" + MyID)
+		  Dim rs As RowSet = HistoryRows(1, deviceNum, -1, currentTime.Val)
+		  If rs = Nil Then Return
+		  Dim n As Integer
+		  While Not rs.AfterLastRow
+		    Dim pl As JSONItem
+		    Try
+		      pl = New JSONItem(rs.Column("payload").StringValue.ReplaceAllBytes("'", """"))
+		    Catch e As JSONException
+		      pl = Nil
+		    End Try
+		    If pl <> Nil Then
+		      Dim sen55 As New JSONItem
+		      Dim scd40 As New JSONItem
+		      For Each k As String In pl.Keys
+		        If k.BeginsWith("sen55_") Then sen55.Value(k.Middle(6)) = pl.Value(k)
+		        If k.BeginsWith("scd40_") Then scd40.Value(k.Middle(6)) = pl.Value(k)
+		      Next
+		      Dim nested As New JSONItem
+		      nested.Value("sen55") = sen55
+		      nested.Value("scd40") = scd40
+		      Values = nested
+		      updateTime = rs.Column("timestamp").StringValue
+		      UpdateData(False)
+		      n = n + 1
+		    End If
+		    rs.MoveToNextRow
+		  Wend
+		  Values = currentValues
+		  updateTime = currentTime
+		  LogEvents "M5AQIwindow", MyID + ": " + Str(n) + " earlier reading(s) loaded"
 		End Sub
 	#tag EndMethod
 
