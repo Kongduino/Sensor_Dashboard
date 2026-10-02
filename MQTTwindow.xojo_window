@@ -1,0 +1,1025 @@
+#tag DesktopWindow
+Begin DesktopWindow MQTTwindow
+   Backdrop        =   0
+   BackgroundColor =   &cFFFFFF
+   Composite       =   False
+   DefaultLocation =   2
+   FullScreen      =   False
+   HasBackgroundColor=   False
+   HasCloseButton  =   True
+   HasFullScreenButton=   False
+   HasMaximizeButton=   True
+   HasMinimizeButton=   True
+   HasTitleBar     =   True
+   Height          =   528
+   ImplicitInstance=   True
+   MacProcID       =   0
+   MaximumHeight   =   32000
+   MaximumWidth    =   32000
+   MenuBar         =   ""
+   MenuBarVisible  =   False
+   MinimumHeight   =   64
+   MinimumWidth    =   64
+   Resizeable      =   True
+   Title           =   "Untitled"
+   Type            =   0
+   Visible         =   False
+   Width           =   828
+   Begin DesktopTabPanel TabPanel1
+      AllowAutoDeactivate=   True
+      Bold            =   False
+      Enabled         =   True
+      FontName        =   "System"
+      FontSize        =   0.0
+      FontUnit        =   0
+      Height          =   488
+      Index           =   -2147483648
+      Italic          =   False
+      Left            =   20
+      LockBottom      =   True
+      LockedInPosition=   False
+      LockLeft        =   True
+      LockRight       =   True
+      LockTop         =   True
+      Panels          =   ""
+      Scope           =   0
+      SmallTabs       =   False
+      TabDefinition   =   "T° / RH\rRSSI / SNR\rHPa"
+      TabIndex        =   0
+      TabPanelIndex   =   0
+      TabStop         =   True
+      Tooltip         =   ""
+      Top             =   20
+      Transparent     =   False
+      Underline       =   False
+      Value           =   2
+      Visible         =   True
+      Width           =   788
+      Begin DesktopChart TempRHchart
+         AllowAutoDeactivate=   True
+         AllowFocus      =   False
+         AllowFocusRing  =   True
+         AllowPopover    =   True
+         AllowTabs       =   False
+         BackgroundColor =   &cFFFFFF
+         Bold            =   False
+         DoubleBuffer    =   False
+         Enabled         =   True
+         FontName        =   "System"
+         FontSize        =   11.0
+         FontUnit        =   0
+         GridColor       =   &ca6a6a6
+         HasLegend       =   True
+         Height          =   430
+         Index           =   -2147483648
+         InitialParent   =   "TabPanel1"
+         Italic          =   False
+         Left            =   40
+         LockBottom      =   True
+         LockedInPosition=   False
+         LockLeft        =   True
+         LockRight       =   True
+         LockTop         =   True
+         Mode            =   0
+         Scope           =   0
+         TabIndex        =   0
+         TabPanelIndex   =   1
+         TabStop         =   True
+         TextColor       =   &c000000
+         Title           =   ""
+         Tooltip         =   ""
+         Top             =   58
+         Underline       =   False
+         Visible         =   True
+         Width           =   748
+      End
+      Begin DesktopChart SNRSSIchart
+         AllowAutoDeactivate=   True
+         AllowFocus      =   False
+         AllowFocusRing  =   True
+         AllowPopover    =   True
+         AllowTabs       =   False
+         BackgroundColor =   &cFFFFFF
+         Bold            =   False
+         DoubleBuffer    =   False
+         Enabled         =   True
+         FontName        =   "System"
+         FontSize        =   11.0
+         FontUnit        =   0
+         GridColor       =   &ca6a6a6
+         HasLegend       =   True
+         Height          =   430
+         Index           =   -2147483648
+         InitialParent   =   "TabPanel1"
+         Italic          =   False
+         Left            =   40
+         LockBottom      =   True
+         LockedInPosition=   False
+         LockLeft        =   True
+         LockRight       =   True
+         LockTop         =   True
+         Mode            =   0
+         Scope           =   0
+         TabIndex        =   0
+         TabPanelIndex   =   2
+         TabStop         =   True
+         TextColor       =   &c000000
+         Title           =   ""
+         Tooltip         =   ""
+         Top             =   58
+         Underline       =   False
+         Visible         =   True
+         Width           =   748
+      End
+      Begin DesktopLabel laAverageRH
+         AllowAutoDeactivate=   True
+         Bold            =   False
+         Enabled         =   True
+         FontName        =   "System"
+         FontSize        =   0.0
+         FontUnit        =   0
+         Height          =   20
+         Index           =   -2147483648
+         InitialParent   =   "TabPanel1"
+         Italic          =   False
+         Left            =   235
+         LockBottom      =   True
+         LockedInPosition=   False
+         LockLeft        =   True
+         LockRight       =   False
+         LockTop         =   False
+         Multiline       =   False
+         Scope           =   0
+         Selectable      =   False
+         TabIndex        =   1
+         TabPanelIndex   =   1
+         TabStop         =   True
+         Text            =   "AverageRH%"
+         TextAlignment   =   0
+         TextColor       =   &c000000
+         Tooltip         =   ""
+         Top             =   488
+         Transparent     =   False
+         Underline       =   False
+         Visible         =   True
+         Width           =   183
+      End
+      Begin DesktopLabel laAverageTemp
+         AllowAutoDeactivate=   True
+         Bold            =   False
+         Enabled         =   True
+         FontName        =   "System"
+         FontSize        =   0.0
+         FontUnit        =   0
+         Height          =   20
+         Index           =   -2147483648
+         InitialParent   =   "TabPanel1"
+         Italic          =   False
+         Left            =   40
+         LockBottom      =   True
+         LockedInPosition=   False
+         LockLeft        =   True
+         LockRight       =   False
+         LockTop         =   False
+         Multiline       =   False
+         Scope           =   0
+         Selectable      =   False
+         TabIndex        =   2
+         TabPanelIndex   =   1
+         TabStop         =   True
+         Text            =   "AverageT°"
+         TextAlignment   =   0
+         TextColor       =   &c000000
+         Tooltip         =   ""
+         Top             =   488
+         Transparent     =   False
+         Underline       =   False
+         Visible         =   True
+         Width           =   183
+      End
+      Begin DesktopLabel laAverageRSSI
+         AllowAutoDeactivate=   True
+         Bold            =   False
+         Enabled         =   True
+         FontName        =   "System"
+         FontSize        =   0.0
+         FontUnit        =   0
+         Height          =   20
+         Index           =   -2147483648
+         InitialParent   =   "TabPanel1"
+         Italic          =   False
+         Left            =   44
+         LockBottom      =   True
+         LockedInPosition=   False
+         LockLeft        =   True
+         LockRight       =   False
+         LockTop         =   False
+         Multiline       =   False
+         Scope           =   0
+         Selectable      =   False
+         TabIndex        =   1
+         TabPanelIndex   =   2
+         TabStop         =   True
+         Text            =   "AverageRSSI"
+         TextAlignment   =   0
+         TextColor       =   &c000000
+         Tooltip         =   ""
+         Top             =   488
+         Transparent     =   False
+         Underline       =   False
+         Visible         =   True
+         Width           =   183
+      End
+      Begin DesktopLabel laAverageSNR
+         AllowAutoDeactivate=   True
+         Bold            =   False
+         Enabled         =   True
+         FontName        =   "System"
+         FontSize        =   0.0
+         FontUnit        =   0
+         Height          =   20
+         Index           =   -2147483648
+         InitialParent   =   "TabPanel1"
+         Italic          =   False
+         Left            =   239
+         LockBottom      =   True
+         LockedInPosition=   False
+         LockLeft        =   True
+         LockRight       =   False
+         LockTop         =   False
+         Multiline       =   False
+         Scope           =   0
+         Selectable      =   False
+         TabIndex        =   2
+         TabPanelIndex   =   2
+         TabStop         =   True
+         Text            =   "AverageSNR"
+         TextAlignment   =   0
+         TextColor       =   &c000000
+         Tooltip         =   ""
+         Top             =   488
+         Transparent     =   False
+         Underline       =   False
+         Visible         =   True
+         Width           =   183
+      End
+      Begin DesktopChart HPaChart
+         AllowAutoDeactivate=   True
+         AllowFocus      =   False
+         AllowFocusRing  =   True
+         AllowPopover    =   True
+         AllowTabs       =   False
+         BackgroundColor =   &cFFFFFF
+         Bold            =   False
+         DoubleBuffer    =   False
+         Enabled         =   True
+         FontName        =   "System"
+         FontSize        =   11.0
+         FontUnit        =   0
+         GridColor       =   &ca6a6a6
+         HasLegend       =   True
+         Height          =   430
+         Index           =   -2147483648
+         InitialParent   =   "TabPanel1"
+         Italic          =   False
+         Left            =   40
+         LockBottom      =   True
+         LockedInPosition=   False
+         LockLeft        =   True
+         LockRight       =   True
+         LockTop         =   True
+         Mode            =   0
+         Scope           =   0
+         TabIndex        =   0
+         TabPanelIndex   =   3
+         TabStop         =   True
+         TextColor       =   &c000000
+         Title           =   ""
+         Tooltip         =   ""
+         Top             =   58
+         Underline       =   False
+         Visible         =   True
+         Width           =   748
+      End
+      Begin DesktopLabel laAverageHPa
+         AllowAutoDeactivate=   True
+         Bold            =   False
+         Enabled         =   True
+         FontName        =   "System"
+         FontSize        =   0.0
+         FontUnit        =   0
+         Height          =   20
+         Index           =   -2147483648
+         InitialParent   =   "TabPanel1"
+         Italic          =   False
+         Left            =   44
+         LockBottom      =   True
+         LockedInPosition=   False
+         LockLeft        =   True
+         LockRight       =   False
+         LockTop         =   False
+         Multiline       =   False
+         Scope           =   0
+         Selectable      =   False
+         TabIndex        =   1
+         TabPanelIndex   =   3
+         TabStop         =   True
+         Text            =   "AverageHPa"
+         TextAlignment   =   0
+         TextColor       =   &c000000
+         Tooltip         =   ""
+         Top             =   488
+         Transparent     =   False
+         Underline       =   False
+         Visible         =   True
+         Width           =   183
+      End
+   End
+   Begin MQTTClient MQTTClient1
+      Address         =   ""
+      BytesAvailable  =   0
+      BytesLeftToSend =   0
+      CertificatePassword=   ""
+      Index           =   -2147483648
+      InitialParent   =   ""
+      LastErrorCode   =   0
+      LockedInPosition=   False
+      Port            =   0
+      Scope           =   0
+      SSLConnected    =   False
+      SSLConnecting   =   False
+      SSLConnectionType=   5
+      SSLEnabled      =   False
+      TabPanelIndex   =   0
+   End
+End
+#tag EndDesktopWindow
+
+#tag WindowCode
+	#tag Event
+		Sub Closing()
+		  // Closing the window ends the feed (the Python process used to end with its Shell)
+		  MQTTClient1.Disconnect
+		  // Off the source list
+		  Dim i As Integer = MyMQTTwindows.IndexOf(Self)
+		  If i >= 0 Then
+		    MyMQTTwindows.RemoveAt(i)
+		    RemoveSourceRow("MQTT", i)
+		  End If
+		End Sub
+	#tag EndEvent
+
+
+	#tag Method, Flags = &h0
+		Function FeedID() As String
+		  // The gateway id this window follows, as 8 lowercase hex digits without "!"
+		  Return mFeedID
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Sub HandlePacketJSON(jsonText As String)
+		  // jsonText: one packet as JSON, exactly as mqtt-converter (and the former Python script) produce it
+		  Dim js As JSONItem
+		  Try
+		    js = New JSONItem(jsonText)
+		  Catch e As JSONException
+		    LogEvents "MQTTwindow", "Bad JSON: " + e.Message
+		    Return
+		  End Try
+		  
+		  Dim type As String
+		  type = js.Lookup("type", "?")
+		  If type = "telemetry" Then
+		    Dim rssi, snr, temp, rh, pa As Double
+		    Dim payload As JSONItem
+		    Dim TS As Integer
+		    Dim fromID, senderID As String
+		    rssi = js.Lookup("rssi", -255).DoubleValue
+		    snr = js.Lookup("snr", -255).DoubleValue
+		    TS = js.Lookup("timestamp", 0).IntegerValue
+		    If TS <= 0 Then TS = DateTime.Now.SecondsFrom1970 // rx_time 0: the gateway has no clock
+		    fromID = js.Lookup("from", "?").StringValue
+		    senderID = js.Lookup("sender", "?").StringValue
+		    If senderID <> "?" Then
+		      senderID = senderID.ReplaceBytes("!", "&H")
+		      senderID = Format(Val(senderID), "0") // all digits: Str() of a Double gives 1.867777e+9
+		    End If
+		    payload = js.Lookup("payload", Nil)
+		    If payload <> Nil Then
+		      temp = payload.Lookup("temperature", -255).DoubleValue
+		      rh = payload.Lookup("relative_humidity", -255).DoubleValue
+		      pa = payload.Lookup("barometric_pressure", -255).DoubleValue
+		      updateData(rssi, snr, temp, rh, pa, TS)
+		      SNRSSIchart.Refresh()
+		      TempRHchart.Refresh()
+		      HPaChart.Refresh()
+		      LogTelemetry(2, fromID, senderID, Str(TS), payload.ToString, rssi, snr, MySessionNum)
+		    End If
+		  End If
+		  
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Sub SetStatus(status As String)
+		  // Connection state in the title bar
+		  Self.Title = "MQTT Feed (" + mFeedID + ") - " + status
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Sub Setup(UUID As String, broker As String, username As String, pwd As String, topic As String, keys As String = "")
+		  // Same feed as the former meshtastic_protobuf_to_json.py: <topic>/2/e/+/!<gateway id>, on port 1883
+		  // without TLS. broker can also be "host:port". keys: see ParseChannelKeys (empty: AQ== on every channel)
+		  Dim names(), psks() As String
+		  Dim fallback, problem As String
+		  If ParseChannelKeys(keys, names, psks, fallback, problem) Then
+		    mFallbackPSK = fallback
+		    For i As Integer = 0 To names.LastIndex
+		      MeshEnsureChannels
+		      Call MeshAddChannel(names(i), psks(i))
+		      LogEvents "MQTTwindow Setup", "Channel " + names(i) + " with its own key"
+		    Next
+		    If mFallbackPSK <> "AQ==" Then LogEvents "MQTTwindow Setup", "Other channels: the key given without a channel name"
+		  Else
+		    mFallbackPSK = "AQ=="
+		    LogEvents "MQTTwindow Setup", "Keys ignored: " + problem
+		  End If
+		  
+		  If UUID.LeftBytes(1) = "!" Then UUID = UUID.MiddleBytes(1)
+		  UUID = UUID.Lowercase
+		  mFeedID = UUID
+		  mTopic = topic + "/2/e/+/!" + UUID
+		  MessageBox mTopic
+		  
+		  Dim host As String = broker
+		  Dim port As Integer = 1883
+		  Dim colon As Integer = broker.IndexOf(":")
+		  If colon > 0 Then
+		    host = broker.Left(colon)
+		    port = Val(broker.Middle(colon + 1))
+		    If port <= 0 Then port = 1883
+		  End If
+		  
+		  // A client id of its own for each window: a broker drops a connection when another one uses the same id
+		  Dim clientID As String = "SDash-" + UUID.Left(8) + "-" + Format(System.Random.InRange(0, 999999), "000000")
+		  LogEvents "MQTTwindow Setup", "Connecting to " + host + ":" + Str(port) + " as " + username + " (" + clientID + "), topic " + mTopic
+		  SetStatus("connecting")
+		  MQTTClient1.SetCredentials(username, pwd)
+		  MQTTClient1.SetAutoReconnect(True, 60, 86400) // like paho's loop_forever: keep trying (gives up after a day)
+		  MQTTClient1.Connect(host, port, clientID)
+		  
+		  
+		  //myTemp.Add 0
+		  //myRH.Add 0
+		  //myPA.Add 0
+		  //myRSSI.Add -148
+		  //mySNR.Add -20
+		  //snrLabels.Add "."
+		  //dhtLabels.Add "."
+		  
+		  Dim snrDataset As New ChartLinearDataset( _
+		  "RSSI", New ColorGroup(Color.Green, Color.White), _
+		  False, myRSSI)
+		  snrDataset.ChartType = ChartLinearDataset.ChartTypes.Line
+		  
+		  Dim rssiDataset As New ChartLinearDataset( _
+		  "SNR", New ColorGroup(Color.Gray, Color.LightGray), _
+		  False, mySNR)
+		  rssiDataset.ChartType = ChartLinearDataset.ChartTypes.Line
+		  
+		  SNRSSIchart.Title = "RSSI / SNR"
+		  SNRSSIchart.Mode = DesktopChart.Modes.Line
+		  SNRSSIchart.GridColor = Color.Clear
+		  SNRSSIchart.AddLabels snrLabels
+		  SNRSSIchart.AddDatasets snrDataset, rssiDataset
+		  
+		  Dim rhDataset As New ChartLinearDataset( _
+		  "RH%", New ColorGroup(Color.Red, Color.Orange), _
+		  False, myRH)
+		  rhDataset.ChartType = ChartLinearDataset.ChartTypes.Line
+		  
+		  Dim tempDataset As New ChartLinearDataset( _
+		  "Temp", New ColorGroup(Color.Blue, Color.White), _
+		  False, myTemp)
+		  tempDataset.ChartType = ChartLinearDataset.ChartTypes.Line
+		  
+		  TempRHchart.Title = "Temp / RH%"
+		  TempRHchart.Mode = DesktopChart.Modes.Line
+		  TempRHchart.GridColor = Color.Clear
+		  TempRHchart.AddLabels dhtLabels
+		  TempRHchart.AddDatasets tempDataset, rhDataset
+		  
+		  Dim hpaDataset As New ChartLinearDataset( _
+		  "HPa", New ColorGroup(Color.Teal, Color.Cyan), _
+		  True, myPA)
+		  hpaDataset.ChartType = ChartLinearDataset.ChartTypes.Bar
+		  
+		  HPaChart.Title = "HPa"
+		  HPaChart.Mode = DesktopChart.Modes.Bar
+		  HPaChart.GridColor = Color.LightGray
+		  HPaChart.AddLabels paLabels
+		  HPaChart.AddDatasets hpaDataset
+		  
+		  Self.Show()
+		  SNRSSIchart.Refresh()
+		  TempRHchart.Refresh()
+		  
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Sub updateData(rssi As Double, snr As Double, temp As Double, rh As Double, pa As Double, TS As Integer)
+		  // One telemetry sample; -255 marks a value the packet didn't have
+		  Dim d As New DateTime(TS)
+		  Dim tsmp As String = Format(d.Hour, "00") + ":" + Format(d.Minute, "00") + ":" + Format(d.Second, "00")
+		  If rh <> -255 And temp <> -255 And pa <> -255 Then
+		    dhtLabels.Add tsmp
+		    myRH.Add rh
+		    myTemp.Add temp
+		    paLabels.Add tsmp
+		    myPA.Add pa
+		    
+		    LogEvents "MQTTwindow UpdateData", "TS: " + Str(TS)
+		    LogEvents "MQTTwindow UpdateData", "T°: " + Str(temp)
+		    LogEvents "MQTTwindow UpdateData", "RH: " + Str(rh)
+		    LogEvents "MQTTwindow UpdateData", "PA: " + Str(pa)
+		  Else
+		    LogEvents "MQTTwindow UpdateData", "Incomplete DHT Data!"
+		  End If
+		  
+		  If snr <> -255 And rssi <> -255 Then
+		    snrLabels.Add tsmp
+		    LogEvents "MQTTwindow UpdateData", "RSSI: " + Str(rssi)
+		    LogEvents "MQTTwindow UpdateData", "SNR: " + Str(snr)
+		    myRSSI.Add rssi
+		    mySNR.Add snr
+		  Else
+		    LogEvents "MQTTwindow UpdateData", "Incomplete RSSI/SNR Data!" + EndOfLine
+		  End If
+		  
+		  // Keep the last kMaxSamples samples: drop the oldest ones
+		  While dhtLabels.Count > kMaxSamples
+		    dhtLabels.RemoveAt(0)
+		    myRH.RemoveAt(0)
+		    myTemp.RemoveAt(0)
+		    paLabels.RemoveAt(0)
+		    myPA.RemoveAt(0)
+		  Wend
+		  While snrLabels.Count > kMaxSamples
+		    snrLabels.RemoveAt(0)
+		    myRSSI.RemoveAt(0)
+		    mySNR.RemoveAt(0)
+		  Wend
+		  
+		  TempRHchart.RemoveAllLabels()
+		  TempRHchart.AddLabels dhtLabels
+		  SNRSSIchart.RemoveAllLabels()
+		  SNRSSIchart.AddLabels snrLabels
+		  HPaChart.RemoveAllLabels()
+		  HPaChart.AddLabels paLabels
+		  
+		  laAverageTemp.Text = "x̄ T°: " + Format(MeanOf(myTemp), "-0.000")
+		  laAverageRH.Text = "x̄ RH%: " + Format(MeanOf(myRH), "-0.000")
+		  TempRHchart.Title = "Temp / RH% (entries: " + Str(myTemp.Count) + ")"
+		  laAverageSNR.Text = "x̄ SNR: " + Format(MeanOf(mySNR), "-0.000")
+		  laAverageRSSI.Text = "x̄ RSSI: " + Format(MeanOf(myRSSI), "-0.000")
+		  SNRSSIchart.Title = "RSSI / SNR (entries: " + Str(myRSSI.Count) + ")"
+		  laAverageHPa.Text = "x̄ HPa: " + Format(MeanOf(myPA), "-0.000")
+		  HPaChart.Title = "HPa (entries: " + Str(myPA.Count) + ")"
+		End Sub
+	#tag EndMethod
+
+
+	#tag Property, Flags = &h0
+		dhtLabels() As String
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mFallbackPSK As String = "AQ=="
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mFeedID As String
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mTopic As String
+	#tag EndProperty
+
+	#tag Property, Flags = &h0
+		myPA() As Double
+	#tag EndProperty
+
+	#tag Property, Flags = &h0
+		myRH() As Double
+	#tag EndProperty
+
+	#tag Property, Flags = &h0
+		myRSSI() As Double
+	#tag EndProperty
+
+	#tag Property, Flags = &h0
+		mySNR() As Double
+	#tag EndProperty
+
+	#tag Property, Flags = &h0
+		myTemp() As Double
+	#tag EndProperty
+
+	#tag Property, Flags = &h0
+		paLabels() As String
+	#tag EndProperty
+
+	#tag Property, Flags = &h0
+		snrLabels() As String
+	#tag EndProperty
+
+
+	#tag Constant, Name = kMaxSamples, Type = Double, Dynamic = False, Default = \"100", Scope = Private
+	#tag EndConstant
+
+
+#tag EndWindowCode
+
+#tag Events laAverageRH
+	#tag Event
+		Sub Opening()
+		  Me.Text = ""
+		  
+		End Sub
+	#tag EndEvent
+#tag EndEvents
+#tag Events laAverageTemp
+	#tag Event
+		Sub Opening()
+		  Me.Text = ""
+		  
+		End Sub
+	#tag EndEvent
+#tag EndEvents
+#tag Events laAverageRSSI
+	#tag Event
+		Sub Opening()
+		  Me.Text = ""
+		  
+		End Sub
+	#tag EndEvent
+#tag EndEvents
+#tag Events laAverageSNR
+	#tag Event
+		Sub Opening()
+		  Me.Text = ""
+		  
+		End Sub
+	#tag EndEvent
+#tag EndEvents
+#tag Events laAverageHPa
+	#tag Event
+		Sub Opening()
+		  Me.Text = ""
+		  
+		End Sub
+	#tag EndEvent
+#tag EndEvents
+#tag Events MQTTClient1
+	#tag Event
+		Sub MQTTConnected(sessionPresent As Boolean)
+		  // Every (re)connection subscribes again (clean session)
+		  Dim packetID As Integer = MQTTClient1.Subscribe(mTopic)
+		  LogEvents "MQTTwindow", "Connected, subscribing to " + mTopic + " (packetID " + Str(packetID) + ")"
+		  SetStatus("connected")
+		End Sub
+	#tag EndEvent
+	#tag Event
+		Sub MessageReceived(topic As String, payload As String, qos As Integer, retained As Boolean)
+		  // <root>/2/e/<channel>/!<gateway>: a channel without a key of its own (Keys field) gets the fallback key,
+		  // AQ== unless a key without a channel name was given (as --psk did in the former script)
+		  Dim parts() As String = topic.Split("/")
+		  If parts.Count >= 2 Then
+		    Dim channelName As String = parts(parts.LastIndex - 1)
+		    MeshEnsureChannels
+		    If channelName <> "PKI" And MeshChannelIndex(channelName) < 0 Then
+		      Call MeshAddChannel(channelName, mFallbackPSK)
+		      If mFallbackPSK = "AQ==" Then
+		        LogEvents "MQTTwindow", "Channel " + channelName + " added with the default key"
+		      Else
+		        LogEvents "MQTTwindow", "Channel " + channelName + " added with the key given without a channel name"
+		      End If
+		    End If
+		  End If
+		  
+		  Dim jsonText, packetKey As String
+		  Dim summary As String = MeshPacketSummary(payload, jsonText, packetKey)
+		  If summary = "" Then
+		    LogEvents "MQTTwindow", topic + ": not a Meshtastic packet (" + Str(payload.Bytes) + " bytes)"
+		    Return
+		  End If
+		  LogEvents "MQTTwindow", summary
+		  If jsonText <> "" Then
+		    LogEvents "MQTTwindow", "json_data: " + jsonText
+		    HandlePacketJSON(jsonText)
+		  End If
+		End Sub
+	#tag EndEvent
+	#tag Event
+		Sub MQTTConnectionRefused(reasonCode As Integer)
+		  // CONNACK return codes of MQTT 3.1.1
+		  Dim reason As String
+		  Select Case reasonCode
+		  Case 1
+		    reason = "unacceptable protocol version"
+		  Case 2
+		    reason = "client identifier rejected"
+		  Case 3
+		    reason = "server unavailable"
+		  Case 4
+		    reason = "bad username or password"
+		  Case 5
+		    reason = "not authorized"
+		  Else
+		    reason = "unknown reason"
+		  End Select
+		  LogEvents "MQTTwindow", "The broker refused the connection: " + reason + " (code " + Str(reasonCode) + ")"
+		  SetStatus("refused: " + reason)
+		End Sub
+	#tag EndEvent
+	#tag Event
+		Sub MQTTDisconnected()
+		  If MQTTClient1.IsReconnecting Then Return // reported by Reconnecting
+		  LogEvents "MQTTwindow", "Disconnected from the broker"
+		  SetStatus("disconnected")
+		End Sub
+	#tag EndEvent
+	#tag Event
+		Sub Reconnecting(attempt As Integer, delaySeconds As Integer, reason As String)
+		  LogEvents "MQTTwindow", "Attempt " + Str(attempt) + " in " + Str(delaySeconds) + " s (" + reason + ")"
+		  SetStatus("reconnecting")
+		End Sub
+	#tag EndEvent
+	#tag Event
+		Sub ReconnectFailed(reason As String)
+		  LogEvents "MQTTwindow", "Gave up reconnecting (last error: " + reason + ")"
+		  SetStatus("offline")
+		End Sub
+	#tag EndEvent
+	#tag Event
+		Sub SocketError(err As RuntimeException)
+		  // While a reconnection is pending, Reconnecting reports the error
+		  If MQTTClient1.IsReconnecting Then Return
+		  LogEvents "MQTTwindow", "Socket " + MQTTClient1.ErrorDescription(err)
+		  SetStatus("error")
+		End Sub
+	#tag EndEvent
+	#tag Event
+		Sub Trace(message As String)
+		  LogEvents "MQTTClient", message
+		End Sub
+	#tag EndEvent
+#tag EndEvents
+#tag ViewBehavior
+	#tag ViewProperty
+		Name="Name"
+		Visible=true
+		Group="ID"
+		InitialValue=""
+		Type="String"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Interfaces"
+		Visible=true
+		Group="ID"
+		InitialValue=""
+		Type="String"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Super"
+		Visible=true
+		Group="ID"
+		InitialValue=""
+		Type="String"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Width"
+		Visible=true
+		Group="Size"
+		InitialValue="600"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Height"
+		Visible=true
+		Group="Size"
+		InitialValue="400"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="MinimumWidth"
+		Visible=true
+		Group="Size"
+		InitialValue="64"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="MinimumHeight"
+		Visible=true
+		Group="Size"
+		InitialValue="64"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="MaximumWidth"
+		Visible=true
+		Group="Size"
+		InitialValue="32000"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="MaximumHeight"
+		Visible=true
+		Group="Size"
+		InitialValue="32000"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Type"
+		Visible=true
+		Group="Frame"
+		InitialValue="0"
+		Type="Types"
+		EditorType="Enum"
+		#tag EnumValues
+			"0 - Document"
+			"1 - Movable Modal"
+			"2 - Modal Dialog"
+			"3 - Floating Window"
+			"4 - Plain Box"
+			"5 - Shadowed Box"
+			"6 - Rounded Window"
+			"7 - Global Floating Window"
+			"8 - Sheet Window"
+			"9 - Modeless Dialog"
+		#tag EndEnumValues
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Title"
+		Visible=true
+		Group="Frame"
+		InitialValue="Untitled"
+		Type="String"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="HasCloseButton"
+		Visible=true
+		Group="Frame"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="HasMaximizeButton"
+		Visible=true
+		Group="Frame"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="HasMinimizeButton"
+		Visible=true
+		Group="Frame"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="HasFullScreenButton"
+		Visible=true
+		Group="Frame"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="HasTitleBar"
+		Visible=true
+		Group="Frame"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Resizeable"
+		Visible=true
+		Group="Frame"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Composite"
+		Visible=false
+		Group="OS X (Carbon)"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="MacProcID"
+		Visible=false
+		Group="OS X (Carbon)"
+		InitialValue="0"
+		Type="Integer"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="FullScreen"
+		Visible=true
+		Group="Behavior"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="DefaultLocation"
+		Visible=true
+		Group="Behavior"
+		InitialValue="2"
+		Type="Locations"
+		EditorType="Enum"
+		#tag EnumValues
+			"0 - Default"
+			"1 - Parent Window"
+			"2 - Main Screen"
+			"3 - Parent Window Screen"
+			"4 - Stagger"
+		#tag EndEnumValues
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Visible"
+		Visible=true
+		Group="Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="ImplicitInstance"
+		Visible=true
+		Group="Window Behavior"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="HasBackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="BackgroundColor"
+		Visible=true
+		Group="Background"
+		InitialValue="&cFFFFFF"
+		Type="ColorGroup"
+		EditorType="ColorGroup"
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="Backdrop"
+		Visible=true
+		Group="Background"
+		InitialValue=""
+		Type="Picture"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="MenuBar"
+		Visible=true
+		Group="Menus"
+		InitialValue=""
+		Type="DesktopMenuBar"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="MenuBarVisible"
+		Visible=true
+		Group="Deprecated"
+		InitialValue="False"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+#tag EndViewBehavior

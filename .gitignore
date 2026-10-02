@@ -1,0 +1,12 @@
+# Session notes for this project (kept local)
+log.md
+
+# Created by the app at run time
+Session_*/
+
+.DS_Store
+*.xojo_uistate
+
+# Xojo builds and debug runs
+Builds - */
+*.debug.app/
