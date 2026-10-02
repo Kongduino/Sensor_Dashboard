@@ -21,7 +21,7 @@ A Meshtastic node's own BME680, followed over USB. At the top, the latest values
   <img src="docs/screenshots/device-pressure.png" alt="Pressure chart" width="49%">
 </p>
 
-The same node followed over MQTT, through the broker its gateway uploads to, one reading every 5 minutes. These are the chart images Export Data writes:
+The same node followed over MQTT, through the broker its gateway uploads to, with a reading every 5 minutes:
 
 ![Temperature chart of an MQTT feed](docs/screenshots/mqtt-temperature.png)
 
