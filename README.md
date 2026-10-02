@@ -87,7 +87,8 @@ Only one window per node: a node has a single queue towards its clients, so two 
 
 - **One chart per quantity** (temperature, humidity, pressure, CO₂, VOC, PM, radio), each with a Y axis fitted to its values, the value and time under the mouse, and the same colour for a quantity in every window, in light and dark mode.
 - Each window shows the **latest values** at the top, and **min / avg / max** under each chart, over the samples shown.
-- Charts keep the last 100 samples of each source. The labels under them are times of day (`HH:MM` or `HH:MM:SS`).
+- **The X axis is a time axis:** each sample sits at the time it was taken, so gaps keep their real width. A reconnect, a node that sent nothing for an hour or a device that uploads every 10 minutes all show as such, instead of being squeezed to one step. The labels under the chart are the samples' times of day (`HH:MM` or `HH:MM:SS`), thinned out when they would overlap; the latest is always shown.
+- Charts keep the last 100 samples of each source.
 - **Every reading is stored** in SQLite (`records.sqlite`, table `telemetry`) with its source type, session, time, node or device ID and the full payload as JSON. Source types: `1` M5 AQI, `2` Meshtastic MQTT, `3` Meshtastic device.
 - Each run of the app is a **session**, with its own folder `Session_<id>/` holding `Event_Log.txt`, a log of everything the app did: connections, every packet received, every value charted.
 - **Export Data** (right-click a source) writes that source's readings for the current session, plus its charts as PNG, into the session folder:
@@ -117,7 +118,7 @@ MQTTwindow.xojo_window          a Meshtastic MQTT feed
 M5AQIwindow.xojo_window         an M5Stack AQI device
 MeshtasticWindow.xojo_window    a Meshtastic node over TCP or USB
 Module1.xojo_code               session, database, event log, exports, settings, AQI parsing
-SensorChart.xojo_code           the chart control (a DesktopCanvas): fitted axis, gradient, hover values
+SensorChart.xojo_code           the chart control (a DesktopCanvas): time axis, fitted Y axis, gradient, hover values
 SensorSeries.xojo_code          one series of a SensorChart
 ChartLook.xojo_code             colours per quantity, series helpers, min / avg / max
 App.xojo_code, MainMenuBar.xojo_menu, Build Automation.xojo_code
