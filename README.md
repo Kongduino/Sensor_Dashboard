@@ -111,7 +111,15 @@ Only one window per node: a node has a single queue towards its clients, so two 
 | M5Stack AQI | `AQI_<device>.csv`, `AQI_<device>_Temperature.png`, `_Humidity.png`, `_CO2.png`, `_VOC.png`, `_PM.png` |
 | Meshtastic device | `DEV_<node>.csv`, `DEV_<node>_Temperature.png`, `_Humidity.png`, `_Pressure.png` |
 
-The CSV files use `;` as separator. They have one row per reading, a timestamp column and one column per value. Missing values are empty cells.
+All three exports write the same kind of CSV: `;` as separator, one row per reading, oldest first, and these columns:
+
+| Source | Columns |
+|---|---|
+| MQTT | `timestamp`, `node` (the sender, `!aabbccdd`), `gateway`, `rssi`, `snr`, then one column per value |
+| M5Stack AQI | `timestamp`, `device` (its 12-digit ID), then one column per value (`sen55_temperature`, `scd40_co2`…) |
+| Meshtastic device | `timestamp`, `node`, then one column per value |
+
+The value columns cover every key that appears in the session's readings, so a reading that lacks one, or a packet without radio values, leaves an empty cell.
 
 ## Where things are kept
 

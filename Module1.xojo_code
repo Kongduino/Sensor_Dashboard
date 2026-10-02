@@ -11,102 +11,34 @@ Protected Module Module1
 
 	#tag Method, Flags = &h0
 		Sub ExportMQTT(w As MQTTwindow)
-		  // Exports this window's feed only: the session's MQTT rows (logType 2) whose senderID is the
-		  // window's gateway, to Session_<id>/MQTT_<gateway>.csv plus the three charts as PNG
-		  Dim feed As String = w.FeedID
-		  Dim title, t(), header As String
-		  Dim fg, fi As FolderItem
-		  Dim tos As TextOutputStream
-		  Dim rs As RowSet
-		  Dim cmd As String
-		  cmd = "select * from telemetry where sessionID=" + _
-		  Str(MySessionNum) + " AND logType=2 AND senderID=" + _
-		  Format(Val("&H" + feed), "0") + ";"
-		  // logType=2 ==> MQTT Meshtastic
+		  // Exports this window's feed: the session's MQTT rows (logType 2) from its gateway, to
+		  // Session_<id>/MQTT_<gateway>.csv (see WriteTelemetryCSV) plus the four charts as PNG
+		  Dim cmd As String = "select * from telemetry where sessionID=" + Str(MySessionNum) + _
+		  " AND logType=2 AND senderID=" + Format(Val("&H" + w.FeedID), "0") + " ORDER BY timestamp;"
 		  LogEvents "ExportMQTT", cmd
-		  rs = MySensordb.SelectSQL(cmd)
+		  Dim rs As RowSet = MySensordb.SelectSQL(cmd)
 		  If rs.RowCount = 0 Then
-		    LogEvents "ExportMQTT", "Nothing to export yet for !" + feed
-		    MessageBox "Nothing to export yet for !" + feed + ": no telemetry received in this session."
+		    LogEvents "ExportMQTT", "Nothing to export yet for " + "!" + w.FeedID
+		    MessageBox "Nothing to export yet for " + "!" + w.FeedID + ": no telemetry received in this session."
 		    Return
 		  End If
 		  
-		  title = "Session_" + MySessionID
-		  fg = New FolderItem(title)
+		  Dim fg As New FolderItem("Session_" + MySessionID)
 		  If Not fg.Exists Then fg.CreateFolder()
-		  title = "MQTT_" + feed + ".csv"
-		  fi = fg.Child(title)
-		  If fi.Exists Then fi.Remove()
-		  tos = tos.Create(fi)
-		  rs.MoveToFirstRow()
-		  t.Add "timestamp"
-		  t.Add "fromID"
-		  t.Add "senderID"
-		  t.Add "rssi"
-		  t.Add "snr"
-		  Dim pl As JSONItem
-		  Dim s As String
-		  s = rs.Column("payload").StringValue
-		  s = s.ReplaceAllBytes("'", """")
-		  pl = New JSONItem(s)
-		  For Each K As String in pl.Keys
-		    t.Add K
-		  Next
-		  header = Join(t, ";")
-		  tos.WriteLine header
-		  While Not rs.AfterLastRow
-		    Redim t(-1)
-		    Dim dt As New DateTime(rs.Column("timestamp").IntegerValue)
-		    t.Add dt.SQLDateTime
-		    // Node ids as !aabbccdd (8 lowercase hex digits)
-		    s = "00000000" + Hex(rs.Column("fromID").IntegerValue)
-		    t.Add "!" + s.Lowercase.RightBytes(8)
-		    s = "00000000" + Hex(rs.Column("senderID").IntegerValue)
-		    t.Add "!" + s.Lowercase.RightBytes(8)
-		    // -255: no radio values (e.g. the gateway's own packets): an empty cell
-		    If rs.Column("rssi").IntegerValue = -255 Then
-		      t.Add ""
-		    Else
-		      t.Add rs.Column("rssi").StringValue
-		    End If
-		    If rs.Column("snr").DoubleValue = -255 Then
-		      t.Add ""
-		    Else
-		      t.Add rs.Column("snr").StringValue
-		    End If
-		    // This row's own payload (the header's keys come from the first row)
-		    Dim rowPL As JSONItem
-		    Try
-		      rowPL = New JSONItem(rs.Column("payload").StringValue.ReplaceAllBytes("'", """"))
-		    Catch e As JSONException
-		      rowPL = New JSONItem
-		    End Try
-		    For Each K As String in pl.Keys
-		      If rowPL.HasKey(K) Then
-		        t.Add Format(rowPL.Value(K).DoubleValue, "0.00")
-		      Else
-		        t.Add ""
-		      End If
-		    Next
-		    header = Join(t, ";")
-		    tos.WriteLine header
-		    rs.MoveToNextRow
-		  Wend
-		  
-		  tos.Flush()
-		  tos = Nil
+		  Dim fi As FolderItem = fg.Child("MQTT_" + w.FeedID + ".csv")
+		  WriteTelemetryCSV(rs, fi, "node", True)
 		  LogEvents "ExportMQTT", "Exported successfuly file " + fi.NativePath
 		  MessageBox "Exported successfuly file " + fi.NativePath
 		  
-		  Dim p As Picture = w.TempChart.ToPicture
-		  p.Save(fg.Child("MQTT_" + feed + "_Temperature.png"), Picture.Formats.PNG, 100)
+		  Dim p As Picture
+		  p = w.TempChart.ToPicture
+		  p.Save(fg.Child("MQTT_" + w.FeedID + "_Temperature.png"), Picture.Formats.PNG, 100)
 		  p = w.RHChart.ToPicture
-		  p.Save(fg.Child("MQTT_" + feed + "_Humidity.png"), Picture.Formats.PNG, 100)
+		  p.Save(fg.Child("MQTT_" + w.FeedID + "_Humidity.png"), Picture.Formats.PNG, 100)
 		  p = w.HPaChart.ToPicture
-		  p.Save(fg.Child("MQTT_" + feed + "_Pressure.png"), Picture.Formats.PNG, 100)
+		  p.Save(fg.Child("MQTT_" + w.FeedID + "_Pressure.png"), Picture.Formats.PNG, 100)
 		  p = w.SNRSSIchart.ToPicture
-		  p.Save(fg.Child("MQTT_" + feed + "_RSSISNR.png"), Picture.Formats.PNG, 100)
-		  
+		  p.Save(fg.Child("MQTT_" + w.FeedID + "_RSSISNR.png"), Picture.Formats.PNG, 100)
 		End Sub
 	#tag EndMethod
 
@@ -381,11 +313,10 @@ Protected Module Module1
 
 	#tag Method, Flags = &h0
 		Sub ExportAQI(w As M5AQIwindow)
-		  // Exports this window's device: the session's AQI rows (logType 1) whose fromID is the device id,
-		  // to Session_<id>/AQI_<device>.csv plus the four charts as PNG
-		  Dim deviceNum As String = Format(Val("&H" + w.MyID), "0")
+		  // Exports this window's device: the session's AQI rows (logType 1) of the device, to
+		  // Session_<id>/AQI_<device>.csv (see WriteTelemetryCSV) plus the five charts as PNG
 		  Dim cmd As String = "select * from telemetry where sessionID=" + Str(MySessionNum) + _
-		  " AND logType=1 AND fromID=" + deviceNum + " ORDER BY timestamp;"
+		  " AND logType=1 AND fromID=" + Format(Val("&H" + w.MyID), "0") + " ORDER BY timestamp;"
 		  LogEvents "ExportAQI", cmd
 		  Dim rs As RowSet = MySensordb.SelectSQL(cmd)
 		  If rs.RowCount = 0 Then
@@ -397,43 +328,12 @@ Protected Module Module1
 		  Dim fg As New FolderItem("Session_" + MySessionID)
 		  If Not fg.Exists Then fg.CreateFolder()
 		  Dim fi As FolderItem = fg.Child("AQI_" + w.MyID + ".csv")
-		  If fi.Exists Then fi.Remove()
-		  Dim tos As TextOutputStream = TextOutputStream.Create(fi)
-		  
-		  // Columns: the time, then the payload keys of the first row (sen55_..., scd40_...)
-		  rs.MoveToFirstRow()
-		  Dim first As New JSONItem(rs.Column("payload").StringValue.ReplaceAllBytes("'", """"))
-		  Dim t() As String
-		  t.Add "timestamp"
-		  For Each K As String In first.Keys
-		    t.Add K
-		  Next
-		  tos.WriteLine Join(t, ";")
-		  While Not rs.AfterLastRow
-		    t.RemoveAll
-		    Dim dt As New DateTime(rs.Column("timestamp").IntegerValue)
-		    t.Add dt.SQLDateTime
-		    Dim rowPL As JSONItem
-		    Try
-		      rowPL = New JSONItem(rs.Column("payload").StringValue.ReplaceAllBytes("'", """"))
-		    Catch e As JSONException
-		      rowPL = New JSONItem
-		    End Try
-		    For Each K As String In first.Keys
-		      If rowPL.HasKey(K) Then
-		        t.Add Format(rowPL.Value(K).DoubleValue, "0.00")
-		      Else
-		        t.Add ""
-		      End If
-		    Next
-		    tos.WriteLine Join(t, ";")
-		    rs.MoveToNextRow
-		  Wend
-		  tos.Close
+		  WriteTelemetryCSV(rs, fi, "device", False)
 		  LogEvents "ExportAQI", "Exported successfuly file " + fi.NativePath
 		  MessageBox "Exported successfuly file " + fi.NativePath
 		  
-		  Dim p As Picture = w.TemperatureChart.ToPicture
+		  Dim p As Picture
+		  p = w.TemperatureChart.ToPicture
 		  p.Save(fg.Child("AQI_" + w.MyID + "_Temperature.png"), Picture.Formats.PNG, 100)
 		  p = w.HumidityChart.ToPicture
 		  p.Save(fg.Child("AQI_" + w.MyID + "_Humidity.png"), Picture.Formats.PNG, 100)
@@ -448,66 +348,32 @@ Protected Module Module1
 
 	#tag Method, Flags = &h0
 		Sub ExportDevice(w As MeshtasticWindow)
-		  // Exports this window's node: the session's rows of logType 3 (Meshtastic device) whose fromID is the
-		  // node, to Session_<id>/DEV_<node>.csv plus the two charts as PNG
-		  Dim feed As String = w.FeedID
+		  // Exports this window's node: the session's rows of logType 3 (Meshtastic device) of the node, to
+		  // Session_<id>/DEV_<node>.csv (see WriteTelemetryCSV) plus the three charts as PNG
 		  Dim cmd As String = "select * from telemetry where sessionID=" + Str(MySessionNum) + _
-		  " AND logType=3 AND fromID=" + Format(Val("&H" + feed), "0") + " ORDER BY timestamp;"
+		  " AND logType=3 AND fromID=" + Format(Val("&H" + w.FeedID), "0") + " ORDER BY timestamp;"
 		  LogEvents "ExportDevice", cmd
 		  Dim rs As RowSet = MySensordb.SelectSQL(cmd)
 		  If rs.RowCount = 0 Then
-		    LogEvents "ExportDevice", "Nothing to export yet for !" + feed
-		    MessageBox "Nothing to export yet for !" + feed + ": no sensor reading received in this session."
+		    LogEvents "ExportDevice", "Nothing to export yet for " + "!" + w.FeedID
+		    MessageBox "Nothing to export yet for " + "!" + w.FeedID + ": no sensor reading received in this session."
 		    Return
 		  End If
 		  
 		  Dim fg As New FolderItem("Session_" + MySessionID)
 		  If Not fg.Exists Then fg.CreateFolder()
-		  Dim fi As FolderItem = fg.Child("DEV_" + feed + ".csv")
-		  If fi.Exists Then fi.Remove()
-		  Dim tos As TextOutputStream = TextOutputStream.Create(fi)
-		  
-		  // Columns: the time, the node, then the payload keys of the first row
-		  rs.MoveToFirstRow()
-		  Dim first As New JSONItem(rs.Column("payload").StringValue.ReplaceAllBytes("'", """"))
-		  Dim t() As String
-		  t.Add "timestamp"
-		  t.Add "node"
-		  For Each K As String In first.Keys
-		    t.Add K
-		  Next
-		  tos.WriteLine Join(t, ";")
-		  While Not rs.AfterLastRow
-		    t.RemoveAll
-		    Dim dt As New DateTime(rs.Column("timestamp").IntegerValue)
-		    t.Add dt.SQLDateTime
-		    t.Add "!" + feed
-		    Dim rowPL As JSONItem
-		    Try
-		      rowPL = New JSONItem(rs.Column("payload").StringValue.ReplaceAllBytes("'", """"))
-		    Catch e As JSONException
-		      rowPL = New JSONItem
-		    End Try
-		    For Each K As String In first.Keys
-		      If rowPL.HasKey(K) Then
-		        t.Add Format(rowPL.Value(K).DoubleValue, "0.00")
-		      Else
-		        t.Add ""
-		      End If
-		    Next
-		    tos.WriteLine Join(t, ";")
-		    rs.MoveToNextRow
-		  Wend
-		  tos.Close
+		  Dim fi As FolderItem = fg.Child("DEV_" + w.FeedID + ".csv")
+		  WriteTelemetryCSV(rs, fi, "node", False)
 		  LogEvents "ExportDevice", "Exported successfuly file " + fi.NativePath
 		  MessageBox "Exported successfuly file " + fi.NativePath
 		  
-		  Dim p As Picture = w.TempChart.ToPicture
-		  p.Save(fg.Child("DEV_" + feed + "_Temperature.png"), Picture.Formats.PNG, 100)
+		  Dim p As Picture
+		  p = w.TempChart.ToPicture
+		  p.Save(fg.Child("DEV_" + w.FeedID + "_Temperature.png"), Picture.Formats.PNG, 100)
 		  p = w.RHChart.ToPicture
-		  p.Save(fg.Child("DEV_" + feed + "_Humidity.png"), Picture.Formats.PNG, 100)
+		  p.Save(fg.Child("DEV_" + w.FeedID + "_Humidity.png"), Picture.Formats.PNG, 100)
 		  p = w.HPaChart.ToPicture
-		  p.Save(fg.Child("DEV_" + feed + "_Pressure.png"), Picture.Formats.PNG, 100)
+		  p.Save(fg.Child("DEV_" + w.FeedID + "_Pressure.png"), Picture.Formats.PNG, 100)
 		End Sub
 	#tag EndMethod
 
@@ -536,6 +402,95 @@ Protected Module Module1
 		    Return Nil
 		  End Try
 		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Function RowPayload(rs As RowSet) As JSONItem
+		  // The payload of the current row (stored with ' for "), an empty object if it can't be read
+		  Try
+		    Return New JSONItem(rs.Column("payload").StringValue.ReplaceAllBytes("'", """"))
+		  Catch e As JSONException
+		    Return New JSONItem
+		  End Try
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Function SourceID(num As Int64, kind As String) As String
+		  // "node": !aabbccdd (8 lowercase hex digits); "device": an M5Stack id, 12 uppercase hex digits
+		  Dim h As String
+		  If kind = "device" Then
+		    h = "000000000000" + Hex(num)
+		    Return h.RightBytes(12).Uppercase
+		  End If
+		  h = "00000000" + Hex(num)
+		  Return "!" + h.RightBytes(8).Lowercase
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Sub WriteTelemetryCSV(rs As RowSet, fi As FolderItem, idColumn As String, withRadio As Boolean)
+		  // The CSV of every export, so they all look the same: ";"-separated, one row per reading, oldest first.
+		  // Columns: timestamp, the source (idColumn: "node" as !aabbccdd, or "device" as 12 hex digits), for MQTT
+		  // the gateway, rssi and snr, then one column per payload key, over all rows (a key missing from a row,
+		  // or a radio value the packet didn't have, is an empty cell)
+		  Dim keys() As String
+		  rs.MoveToFirstRow
+		  While Not rs.AfterLastRow
+		    Dim pl As JSONItem = RowPayload(rs)
+		    For Each k As String In pl.Keys
+		      If keys.IndexOf(k) < 0 Then keys.Add k
+		    Next
+		    rs.MoveToNextRow
+		  Wend
+		  
+		  If fi.Exists Then fi.Remove
+		  Dim tos As TextOutputStream = TextOutputStream.Create(fi)
+		  Dim t() As String
+		  t.Add "timestamp"
+		  t.Add idColumn
+		  If withRadio Then
+		    t.Add "gateway"
+		    t.Add "rssi"
+		    t.Add "snr"
+		  End If
+		  For Each k As String In keys
+		    t.Add k
+		  Next
+		  tos.WriteLine Join(t, ";")
+		  
+		  rs.MoveToFirstRow
+		  While Not rs.AfterLastRow
+		    t.RemoveAll
+		    Dim dt As New DateTime(rs.Column("timestamp").IntegerValue)
+		    t.Add dt.SQLDateTime
+		    t.Add SourceID(rs.Column("fromID").Int64Value, idColumn)
+		    If withRadio Then
+		      t.Add SourceID(rs.Column("senderID").Int64Value, "node")
+		      If rs.Column("rssi").IntegerValue = -255 Then
+		        t.Add ""
+		      Else
+		        t.Add rs.Column("rssi").StringValue
+		      End If
+		      If rs.Column("snr").DoubleValue = -255 Then
+		        t.Add ""
+		      Else
+		        t.Add Format(rs.Column("snr").DoubleValue, "-0.00")
+		      End If
+		    End If
+		    Dim rowPL As JSONItem = RowPayload(rs)
+		    For Each k As String In keys
+		      If rowPL.HasKey(k) Then
+		        t.Add Format(rowPL.Value(k).DoubleValue, "-0.00")
+		      Else
+		        t.Add ""
+		      End If
+		    Next
+		    tos.WriteLine Join(t, ";")
+		    rs.MoveToNextRow
+		  Wend
+		  tos.Close
+		End Sub
 	#tag EndMethod
 
 
