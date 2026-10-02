@@ -118,7 +118,11 @@ Inherits DesktopCanvas
 		  If last - first < stepSize Then last = first + stepSize
 		  mAxisLow = first
 		  mAxisHigh = last
-		  Dim decimals As Integer = Max(0, -Floor(Log(stepSize) / Log(10) + 1e-9))
+		  // As many decimals as the step needs: 0.25 needs 2, 0.2 needs 1, 5 needs 0
+		  Dim decimals As Integer
+		  While decimals < 6 And Abs(stepSize * 10 ^ decimals - Round(stepSize * 10 ^ decimals)) > 1e-6
+		    decimals = decimals + 1
+		  Wend
 		  Dim fmt As String = "0"
 		  If decimals > 0 Then
 		    fmt = "0."
