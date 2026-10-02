@@ -103,7 +103,7 @@ The CSV files use `;` as separator. They have one row per reading, a timestamp c
 | What | Where |
 |---|---|
 | Setup fields (broker, IDs, password, keys, last serial port) | `~/Library/Application Support/Sensor_Dashboard/settings.json` on macOS (the application data folder on other systems). Readable by your account only: it holds the broker password and channel keys in plain text. It's outside the project, so it can't end up in the repository. |
-| Database | `/tmp/Sensor_Dashboard/records.sqlite` |
+| Database | `records.sqlite`, in the same folder as `settings.json` (it used to be in `/tmp/Sensor_Dashboard`; a database left there is copied over once) |
 | Event logs and exports | `Session_<id>/`, in the folder the app runs from (next to the built app, or next to the project when run from Xojo) |
 
 ## Repository layout
@@ -125,7 +125,6 @@ LICENSE                         GPL-3.0
 
 ## Limitations
 
-- **The database is in `/tmp`,** which macOS empties at restart, so stored readings don't survive a reboot. Export what you want to keep.
 - MQTT feeds connect without TLS, and on port 1883 unless you give `host:port`. MQTT_Xojo supports TLS, but the dashboard doesn't expose it yet.
 - An MQTT feed follows one gateway. If that gateway also uploads other nodes' environment telemetry, those readings are charted in the same window.
 - All MQTT feeds share one table of channel keys: two feeds that give the same channel name different keys overwrite each other.

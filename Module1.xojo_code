@@ -161,9 +161,21 @@ Protected Module Module1
 		  
 		  Dim tos As TextOutputStream
 		  
-		  MyFolder = New FolderItem("/tmp/Sensor_Dashboard")
+		  // The database lives next to the settings file (SettingsFile), in the application data folder:
+		  // ~/Library/Application Support/Sensor_Dashboard on macOS. /tmp, used before, is emptied at restart
+		  MyFolder = SpecialFolder.ApplicationData.Child("Sensor_Dashboard")
 		  If Not MyFolder.Exists Then MyFolder.CreateFolder()
 		  MySensordbFI = MyFolder.Child("records.sqlite")
+		  // One-time move: bring over a database still in /tmp/Sensor_Dashboard
+		  Dim oldDB As New FolderItem("/tmp/Sensor_Dashboard/records.sqlite", FolderItem.PathModes.Native)
+		  If Not MySensordbFI.Exists And oldDB.Exists Then
+		    Try
+		      oldDB.CopyTo(MyFolder)
+		      LogEvents "SetupSensorFolder", "Database copied from " + oldDB.NativePath + " to " + MySensordbFI.NativePath
+		    Catch e As IOException
+		      LogEvents "SetupSensorFolder", "Couldn't copy the database from /tmp: " + e.Message
+		    End Try
+		  End If
 		  If Not MySensordbFI.Exists Then
 		    LogEvents "SetupSensorFolder",  "Creating db!"
 		    MySensordb  = New SQLiteDatabase
