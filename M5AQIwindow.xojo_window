@@ -11,7 +11,7 @@ Begin DesktopWindow M5AQIwindow
    HasMaximizeButton=   True
    HasMinimizeButton=   True
    HasTitleBar     =   True
-   Height          =   528
+   Height          =   560
    ImplicitInstance=   True
    MacProcID       =   0
    MaximumHeight   =   32000
@@ -25,6 +25,39 @@ Begin DesktopWindow M5AQIwindow
    Type            =   0
    Visible         =   False
    Width           =   828
+   Begin DesktopLabel laLatest
+      AllowAutoDeactivate=   True
+      Bold            =   True
+      Enabled         =   True
+      FontName        =   "System"
+      FontSize        =   15.0
+      FontUnit        =   0
+      Height          =   24
+      Index           =   -2147483648
+      InitialParent   =   ""
+      Italic          =   False
+      Left            =   20
+      LockBottom      =   False
+      LockedInPosition=   False
+      LockLeft        =   True
+      LockRight       =   True
+      LockTop         =   True
+      Multiline       =   False
+      Scope           =   0
+      Selectable      =   True
+      TabIndex        =   1
+      TabPanelIndex   =   0
+      TabStop         =   True
+      Text            =   "Waiting for the first reading…"
+      TextAlignment   =   0
+      TextColor       =   &c000000
+      Tooltip         =   "The latest values"
+      Top             =   12
+      Transparent     =   False
+      Underline       =   False
+      Visible         =   True
+      Width           =   788
+   End
    Begin DesktopTabPanel TabPanel1
       AllowAutoDeactivate=   True
       Bold            =   False
@@ -32,7 +65,7 @@ Begin DesktopWindow M5AQIwindow
       FontName        =   "System"
       FontSize        =   0.0
       FontUnit        =   0
-      Height          =   488
+      Height          =   504
       Index           =   -2147483648
       Italic          =   False
       Left            =   20
@@ -44,166 +77,144 @@ Begin DesktopWindow M5AQIwindow
       Panels          =   ""
       Scope           =   "0"
       SmallTabs       =   False
-      TabDefinition   =   "Temperature\rHumidity\rVOCO2\rPM"
+      TabDefinition   =   "Temperature\rHumidity\rCO2\rVOC\rPM"
       TabIndex        =   0
       TabPanelIndex   =   0
       TabStop         =   True
       Tooltip         =   ""
-      Top             =   20
+      Top             =   44
       Transparent     =   False
       Underline       =   False
-      Value           =   2
+      Value           =   0
       Visible         =   True
       Width           =   788
-      Begin DesktopChart TemperatureChart
+      Begin SensorChart TemperatureChart
          AllowAutoDeactivate=   True
          AllowFocus      =   False
          AllowFocusRing  =   True
-         AllowPopover    =   True
          AllowTabs       =   False
-         BackgroundColor =   &cFFFFFF
-         Bold            =   False
-         DoubleBuffer    =   False
+         Backdrop        =   0
          Enabled         =   True
-         FontName        =   "System"
-         FontSize        =   11.0
-         FontUnit        =   0
-         GridColor       =   &ca6a6a6
-         HasLegend       =   True
-         Height          =   430
+         Height          =   400
          Index           =   -2147483648
          InitialParent   =   "TabPanel1"
-         Italic          =   False
          Left            =   40
          LockBottom      =   True
          LockedInPosition=   False
          LockLeft        =   True
          LockRight       =   True
          LockTop         =   True
-         Mode            =   0
          Scope           =   "0"
          TabIndex        =   0
          TabPanelIndex   =   1
          TabStop         =   True
-         TextColor       =   &c000000
-         Title           =   ""
          Tooltip         =   ""
-         Top             =   58
-         Underline       =   False
+         Top             =   82
+         Transparent     =   False
          Visible         =   True
          Width           =   748
       End
-      Begin DesktopChart HumidityChart
+      Begin SensorChart HumidityChart
          AllowAutoDeactivate=   True
          AllowFocus      =   False
          AllowFocusRing  =   True
-         AllowPopover    =   True
          AllowTabs       =   False
-         BackgroundColor =   &cFFFFFF
-         Bold            =   False
-         DoubleBuffer    =   False
+         Backdrop        =   0
          Enabled         =   True
-         FontName        =   "System"
-         FontSize        =   11.0
-         FontUnit        =   0
-         GridColor       =   &ca6a6a6
-         HasLegend       =   True
-         Height          =   430
+         Height          =   400
          Index           =   -2147483648
          InitialParent   =   "TabPanel1"
-         Italic          =   False
          Left            =   40
          LockBottom      =   True
          LockedInPosition=   False
          LockLeft        =   True
          LockRight       =   True
          LockTop         =   True
-         Mode            =   0
          Scope           =   "0"
          TabIndex        =   0
          TabPanelIndex   =   2
          TabStop         =   True
-         TextColor       =   &c000000
-         Title           =   ""
          Tooltip         =   ""
-         Top             =   58
-         Underline       =   False
+         Top             =   82
+         Transparent     =   False
          Visible         =   True
          Width           =   748
       End
-      Begin DesktopChart VOCO2chart
+      Begin SensorChart CO2Chart
          AllowAutoDeactivate=   True
          AllowFocus      =   False
          AllowFocusRing  =   True
-         AllowPopover    =   True
          AllowTabs       =   False
-         BackgroundColor =   &cFFFFFF
-         Bold            =   False
-         DoubleBuffer    =   False
+         Backdrop        =   0
          Enabled         =   True
-         FontName        =   "System"
-         FontSize        =   11.0
-         FontUnit        =   0
-         GridColor       =   &ca6a6a6
-         HasLegend       =   True
-         Height          =   430
+         Height          =   400
          Index           =   -2147483648
          InitialParent   =   "TabPanel1"
-         Italic          =   False
          Left            =   40
          LockBottom      =   True
          LockedInPosition=   False
          LockLeft        =   True
          LockRight       =   True
          LockTop         =   True
-         Mode            =   0
          Scope           =   "0"
          TabIndex        =   0
          TabPanelIndex   =   3
          TabStop         =   True
-         TextColor       =   &c000000
-         Title           =   ""
          Tooltip         =   ""
-         Top             =   58
-         Underline       =   False
+         Top             =   82
+         Transparent     =   False
          Visible         =   True
          Width           =   748
       End
-      Begin DesktopChart PMchart
+      Begin SensorChart VOCChart
          AllowAutoDeactivate=   True
          AllowFocus      =   False
          AllowFocusRing  =   True
-         AllowPopover    =   True
          AllowTabs       =   False
-         BackgroundColor =   &cFFFFFF
-         Bold            =   False
-         DoubleBuffer    =   False
+         Backdrop        =   0
          Enabled         =   True
-         FontName        =   "System"
-         FontSize        =   11.0
-         FontUnit        =   0
-         GridColor       =   &ca6a6a6
-         HasLegend       =   True
-         Height          =   430
+         Height          =   400
          Index           =   -2147483648
          InitialParent   =   "TabPanel1"
-         Italic          =   False
          Left            =   40
          LockBottom      =   True
          LockedInPosition=   False
          LockLeft        =   True
          LockRight       =   True
          LockTop         =   True
-         Mode            =   0
          Scope           =   "0"
          TabIndex        =   0
          TabPanelIndex   =   4
          TabStop         =   True
-         TextColor       =   &c000000
-         Title           =   ""
          Tooltip         =   ""
-         Top             =   58
-         Underline       =   False
+         Top             =   82
+         Transparent     =   False
+         Visible         =   True
+         Width           =   748
+      End
+      Begin SensorChart PMchart
+         AllowAutoDeactivate=   True
+         AllowFocus      =   False
+         AllowFocusRing  =   True
+         AllowTabs       =   False
+         Backdrop        =   0
+         Enabled         =   True
+         Height          =   400
+         Index           =   -2147483648
+         InitialParent   =   "TabPanel1"
+         Left            =   40
+         LockBottom      =   True
+         LockedInPosition=   False
+         LockLeft        =   True
+         LockRight       =   True
+         LockTop         =   True
+         Scope           =   "0"
+         TabIndex        =   0
+         TabPanelIndex   =   5
+         TabStop         =   True
+         Tooltip         =   ""
+         Top             =   82
+         Transparent     =   False
          Visible         =   True
          Width           =   748
       End
@@ -228,17 +239,17 @@ Begin DesktopWindow M5AQIwindow
          Scope           =   "0"
          Selectable      =   False
          TabIndex        =   1
-         TabPanelIndex   =   3
+         TabPanelIndex   =   4
          TabStop         =   True
          Text            =   "AverageVOC"
          TextAlignment   =   0
          TextColor       =   &c000000
          Tooltip         =   ""
-         Top             =   488
+         Top             =   490
          Transparent     =   False
          Underline       =   False
          Visible         =   True
-         Width           =   183
+         Width           =   748
       End
       Begin DesktopLabel laAverageCO2
          AllowAutoDeactivate=   True
@@ -251,7 +262,7 @@ Begin DesktopWindow M5AQIwindow
          Index           =   -2147483648
          InitialParent   =   "TabPanel1"
          Italic          =   False
-         Left            =   235
+         Left            =   40
          LockBottom      =   True
          LockedInPosition=   False
          LockLeft        =   True
@@ -267,11 +278,11 @@ Begin DesktopWindow M5AQIwindow
          TextAlignment   =   0
          TextColor       =   &c000000
          Tooltip         =   ""
-         Top             =   488
+         Top             =   490
          Transparent     =   False
          Underline       =   False
          Visible         =   True
-         Width           =   183
+         Width           =   748
       End
       Begin DesktopLabel laAverageTemp40
          AllowAutoDeactivate=   True
@@ -284,7 +295,7 @@ Begin DesktopWindow M5AQIwindow
          Index           =   -2147483648
          InitialParent   =   "TabPanel1"
          Italic          =   False
-         Left            =   235
+         Left            =   420
          LockBottom      =   True
          LockedInPosition=   False
          LockLeft        =   True
@@ -300,11 +311,11 @@ Begin DesktopWindow M5AQIwindow
          TextAlignment   =   0
          TextColor       =   &c000000
          Tooltip         =   ""
-         Top             =   488
+         Top             =   490
          Transparent     =   False
          Underline       =   False
          Visible         =   True
-         Width           =   183
+         Width           =   368
       End
       Begin DesktopLabel laAverageTemp55
          AllowAutoDeactivate=   True
@@ -333,11 +344,11 @@ Begin DesktopWindow M5AQIwindow
          TextAlignment   =   0
          TextColor       =   &c000000
          Tooltip         =   ""
-         Top             =   488
+         Top             =   490
          Transparent     =   False
          Underline       =   False
          Visible         =   True
-         Width           =   183
+         Width           =   360
       End
    End
    Begin Timer DataAcquisitionTimer
@@ -384,81 +395,34 @@ End
 		  UpdateData()
 		  Self.Show()
 		  
-		  Dim sen55TempDataset As New ChartLinearDataset( _
-		  "SEn55", New ColorGroup(Color.Red, Color.Orange), _
-		  True, SEN55temperature)
-		  sen55TempDataset.ChartType = ChartLinearDataset.ChartTypes.Bar
-		  
-		  Dim scd40TempDataset As New ChartLinearDataset( _
-		  "SCD40", New ColorGroup(Color.Blue, Color.White), _
-		  True, SCD40temperature)
-		  scd40TempDataset.ChartType = ChartLinearDataset.ChartTypes.Bar
-		  
-		  TemperatureChart.Title = "Temperature"
-		  TemperatureChart.Mode = DesktopChart.Modes.Bar
-		  TemperatureChart.GridColor = Color.Clear
+		  // One chart per quantity, so each gets a Y axis fitted to its own values (see ChartLook)
+		  StyleChart(TemperatureChart, "Temperature", "0.0")
 		  TemperatureChart.AddLabels TemperatureLabels
-		  TemperatureChart.AddDatasets sen55TempDataset, scd40TempDataset
+		  TemperatureChart.AddDatasets LineSet("SEN55", "temperature", SEN55temperature, " °C"), _
+		  LineSet("SCD40", "temperature2", SCD40temperature, " °C")
 		  
-		  Dim sen55HumidDataset As New ChartLinearDataset( _
-		  "SEN55", new ColorGroup(Color.Blue, Color.White), _
-		  True, SEN55humidity)
-		  sen55HumidDataset.ChartType = ChartLinearDataset.ChartTypes.Bar
-		  
-		  Dim SCD40humidityDataset As New ChartLinearDataset( _
-		  "SCD40", new ColorGroup(Color.Red, Color.Orange), _
-		  True, SCD40humidity)
-		  SCD40humidityDataset.ChartType = ChartLinearDataset.ChartTypes.Bar
-		  
-		  HumidityChart.Title = "Humidity"
-		  HumidityChart.Mode = DesktopChart.Modes.Bar
-		  'HumidityChart.GridColor = Color.Clear
-		  HumidityChart.AddDatasets sen55HumidDataset, SCD40humidityDataset
+		  StyleChart(HumidityChart, "Humidity", "0.0")
 		  HumidityChart.AddLabels TemperatureLabels
+		  HumidityChart.AddDatasets LineSet("SEN55", "humidity", SEN55humidity, " %"), _
+		  LineSet("SCD40", "humidity2", SCD40humidity, " %")
 		  
-		  Dim vocDataset As New ChartLinearDataset( _
-		  "VOC", New ColorGroup(Color.Red, Color.Orange), _
-		  True, SEN55voc)
-		  vocDataset.ChartType = ChartLinearDataset.ChartTypes.Bar
+		  StyleChart(CO2Chart, "CO2", "0")
+		  CO2Chart.AddLabels TemperatureLabels
+		  CO2Chart.AddDataset LineSet("CO2 (SCD40)", "co2", SCD40CO2, " ppm")
 		  
-		  Dim co2Dataset As New ChartLinearDataset( _
-		  "CO2", New ColorGroup(Color.Blue, Color.White), _
-		  True, SCD40CO2)
-		  co2Dataset.ChartType = ChartLinearDataset.ChartTypes.Bar
-		  VOCO2chart.Title = "PM VOC"
-		  VOCO2chart.Mode = DesktopChart.Modes.Bar
-		  VOCO2chart.GridColor = Color.Clear
-		  VOCO2chart.AddDatasets vocDataset, co2Dataset
-		  VOCO2chart.AddLabels TemperatureLabels
+		  StyleChart(VOCChart, "VOC index", "0")
+		  VOCChart.AddLabels TemperatureLabels
+		  VOCChart.AddDataset LineSet("VOC index (SEN55)", "voc", SEN55voc, "")
 		  
-		  Dim pm1Dataset As New ChartLinearDataset( _
-		  "PM 1.0", New ColorGroup(Color.Red, Color.Orange), _
-		  True, SEN55PM1)
-		  pm1Dataset.ChartType = ChartLinearDataset.ChartTypes.Bar
-		  
-		  Dim pm2Dataset As New ChartLinearDataset( _
-		  "PM 2.5", New ColorGroup(Color.Blue, Color.White), _
-		  True, SEN55PM2)
-		  pm2Dataset.ChartType = ChartLinearDataset.ChartTypes.Bar
-		  
-		  Dim pm10Dataset As New ChartLinearDataset( _
-		  "PM 10.0", New ColorGroup(Color.Gray, Color.LightGray), _
-		  True, SEN55PM10)
-		  pm10Dataset.ChartType = ChartLinearDataset.ChartTypes.Bar
-		  
-		  Dim pm4Dataset As New ChartLinearDataset( _
-		  "PM 4.0", New ColorGroup(Color.Green, Color.White), _
-		  True, SEN55PM4)
-		  pm4Dataset.ChartType = ChartLinearDataset.ChartTypes.Bar
-		  PMchart.Title = "PM"
-		  PMchart.Mode = DesktopChart.Modes.Bar
-		  PMchart.GridColor = Color.Clear
-		  PMchart.AddDatasets pm1Dataset, pm2Dataset, pm4Dataset, pm10Dataset
+		  StyleChart(PMchart, "Particulate matter", "0.0", True)
 		  PMchart.AddLabels TemperatureLabels
+		  PMchart.AddDatasets BarSet("PM1.0", "pm1", SEN55PM1, " µg/m³"), BarSet("PM2.5", "pm25", SEN55PM2, " µg/m³"), _
+		  BarSet("PM4.0", "pm4", SEN55PM4, " µg/m³"), BarSet("PM10", "pm10", SEN55PM10, " µg/m³")
 		  
 		  TemperatureChart.Refresh()
 		  HumidityChart.Refresh()
-		  VOCO2chart.Refresh()
+		  CO2Chart.Refresh()
+		  VOCChart.Refresh()
 		  PMchart.Refresh()
 		  DataAcquisitionTimer.RunMode = Timer.RunModes.Multiple
 		  
@@ -521,8 +485,10 @@ End
 		  TemperatureChart.AddLabels TemperatureLabels
 		  HumidityChart.RemoveAllLabels()
 		  HumidityChart.AddLabels TemperatureLabels
-		  VOCO2chart.RemoveAllLabels()
-		  VOCO2chart.AddLabels TemperatureLabels
+		  CO2Chart.RemoveAllLabels()
+		  CO2Chart.AddLabels TemperatureLabels
+		  VOCChart.RemoveAllLabels()
+		  VOCChart.AddLabels TemperatureLabels
 		  PMchart.RemoveAllLabels()
 		  PMchart.AddLabels TemperatureLabels
 		  
@@ -537,10 +503,21 @@ End
 		  LogEvents "M5AQIwindow", "SEN55 PM4.0: " + Str(pm4)
 		  LogEvents "M5AQIwindow", "SEN55 PM10.0: " + Str(pm10)
 		  
-		  laAverageCO2.Text = "x̄ CO₂: " + Format(MeanOf(SCD40CO2), "-0.000")
-		  laAverageVOC.Text = "x̄ VOC: " + Format(MeanOf(SEN55voc), "-0.000")
-		  laAverageTemp55.Text = "x̄ SEN55: " + Format(MeanOf(SEN55temperature), "-0.000")
-		  laAverageTemp40.Text = "x̄ SCD40: " + Format(MeanOf(SCD40temperature), "-0.000")
+		  laAverageTemp55.Text = StatsText("SEN55", SEN55temperature, " °C", "-0.0")
+		  laAverageTemp40.Text = StatsText("SCD40", SCD40temperature, " °C", "-0.0")
+		  laAverageCO2.Text = StatsText("CO2", SCD40CO2, " ppm", "0")
+		  laAverageVOC.Text = StatsText("VOC index", SEN55voc, "", "0")
+		  Dim samples As String = SampleCount(TemperatureLabels.Count) + ")"
+		  TemperatureChart.Title = "Temperature  (" + samples
+		  HumidityChart.Title = "Humidity  (" + samples
+		  CO2Chart.Title = "CO2  (" + samples
+		  VOCChart.Title = "VOC index  (" + samples
+		  PMchart.Title = "Particulate matter  (" + samples
+		  
+		  // The latest values at a glance
+		  laLatest.Text = Format(sen55Temp, "-0.0") + " °C   ·   " + Format(sen55RH, "0") + " %   ·   CO2 " + _
+		  Format(scd40CO2data, "0") + " ppm   ·   VOC " + Format(sen55VOCdata, "0") + "   ·   PM2.5 " + _
+		  Format(pm2, "0.0") + " µg/m³      " + TemperatureLabels(TemperatureLabels.LastIndex)
 		  
 		  // SQLite (logType 1 = M5 AQI): fromID and senderID are the device id as a number, the payload
 		  // the readings with flat keys (sen55_temperature, scd40_co2, ...); no radio, so rssi/snr -255
@@ -603,7 +580,8 @@ End
 		  UpdateData()
 		  TemperatureChart.Refresh()
 		  HumidityChart.Refresh()
-		  VOCO2chart.Refresh()
+		  CO2Chart.Refresh()
+		  VOCChart.Refresh()
 		  PMchart.Refresh()
 		End Sub
 	#tag EndMethod

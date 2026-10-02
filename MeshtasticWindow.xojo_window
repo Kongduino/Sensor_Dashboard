@@ -11,7 +11,7 @@ Begin DesktopWindow MeshtasticWindow
    HasMaximizeButton=   True
    HasMinimizeButton=   True
    HasTitleBar     =   True
-   Height          =   528
+   Height          =   560
    ImplicitInstance=   True
    MacProcID       =   0
    MaximumHeight   =   32000
@@ -25,6 +25,39 @@ Begin DesktopWindow MeshtasticWindow
    Type            =   0
    Visible         =   False
    Width           =   828
+   Begin DesktopLabel laLatest
+      AllowAutoDeactivate=   True
+      Bold            =   True
+      Enabled         =   True
+      FontName        =   "System"
+      FontSize        =   15.0
+      FontUnit        =   0
+      Height          =   24
+      Index           =   -2147483648
+      InitialParent   =   ""
+      Italic          =   False
+      Left            =   20
+      LockBottom      =   False
+      LockedInPosition=   False
+      LockLeft        =   True
+      LockRight       =   True
+      LockTop         =   True
+      Multiline       =   False
+      Scope           =   0
+      Selectable      =   True
+      TabIndex        =   1
+      TabPanelIndex   =   0
+      TabStop         =   True
+      Text            =   "Waiting for the first reading…"
+      TextAlignment   =   0
+      TextColor       =   &c000000
+      Tooltip         =   "The latest values"
+      Top             =   12
+      Transparent     =   False
+      Underline       =   False
+      Visible         =   True
+      Width           =   788
+   End
    Begin DesktopTabPanel TabPanel1
       AllowAutoDeactivate=   True
       Bold            =   False
@@ -32,7 +65,7 @@ Begin DesktopWindow MeshtasticWindow
       FontName        =   "System"
       FontSize        =   0.0
       FontUnit        =   0
-      Height          =   488
+      Height          =   504
       Index           =   -2147483648
       Italic          =   False
       Left            =   20
@@ -44,52 +77,66 @@ Begin DesktopWindow MeshtasticWindow
       Panels          =   ""
       Scope           =   "0"
       SmallTabs       =   False
-      TabDefinition   =   "T° / RH\rHPa"
+      TabDefinition   =   "Temperature\rHumidity\rPressure"
       TabIndex        =   0
       TabPanelIndex   =   0
       TabStop         =   True
       Tooltip         =   ""
-      Top             =   20
+      Top             =   44
       Transparent     =   False
       Underline       =   False
-      Value           =   1
+      Value           =   0
       Visible         =   True
       Width           =   788
-      Begin DesktopChart TempRHchart
+      Begin SensorChart TempChart
          AllowAutoDeactivate=   True
          AllowFocus      =   False
          AllowFocusRing  =   True
-         AllowPopover    =   True
          AllowTabs       =   False
-         BackgroundColor =   &cFFFFFF
-         Bold            =   False
-         DoubleBuffer    =   False
+         Backdrop        =   0
          Enabled         =   True
-         FontName        =   "System"
-         FontSize        =   11.0
-         FontUnit        =   0
-         GridColor       =   &ca6a6a6
-         HasLegend       =   True
-         Height          =   430
+         Height          =   400
          Index           =   -2147483648
          InitialParent   =   "TabPanel1"
-         Italic          =   False
          Left            =   40
          LockBottom      =   True
          LockedInPosition=   False
          LockLeft        =   True
          LockRight       =   True
          LockTop         =   True
-         Mode            =   0
          Scope           =   "0"
          TabIndex        =   0
          TabPanelIndex   =   1
          TabStop         =   True
-         TextColor       =   &c000000
-         Title           =   ""
          Tooltip         =   ""
-         Top             =   58
-         Underline       =   False
+         Top             =   82
+         Transparent     =   False
+         Visible         =   True
+         Width           =   748
+      End
+      Begin SensorChart RHChart
+         AllowAutoDeactivate=   True
+         AllowFocus      =   False
+         AllowFocusRing  =   True
+         AllowTabs       =   False
+         Backdrop        =   0
+         Enabled         =   True
+         Height          =   400
+         Index           =   -2147483648
+         InitialParent   =   "TabPanel1"
+         Left            =   40
+         LockBottom      =   True
+         LockedInPosition=   False
+         LockLeft        =   True
+         LockRight       =   True
+         LockTop         =   True
+         Scope           =   "0"
+         TabIndex        =   0
+         TabPanelIndex   =   2
+         TabStop         =   True
+         Tooltip         =   ""
+         Top             =   82
+         Transparent     =   False
          Visible         =   True
          Width           =   748
       End
@@ -104,7 +151,7 @@ Begin DesktopWindow MeshtasticWindow
          Index           =   -2147483648
          InitialParent   =   "TabPanel1"
          Italic          =   False
-         Left            =   235
+         Left            =   40
          LockBottom      =   True
          LockedInPosition=   False
          LockLeft        =   True
@@ -114,17 +161,17 @@ Begin DesktopWindow MeshtasticWindow
          Scope           =   "0"
          Selectable      =   False
          TabIndex        =   1
-         TabPanelIndex   =   1
+         TabPanelIndex   =   2
          TabStop         =   True
          Text            =   "AverageRH%"
          TextAlignment   =   0
          TextColor       =   &c000000
          Tooltip         =   ""
-         Top             =   488
+         Top             =   490
          Transparent     =   False
          Underline       =   False
          Visible         =   True
-         Width           =   183
+         Width           =   748
       End
       Begin DesktopLabel laAverageTemp
          AllowAutoDeactivate=   True
@@ -153,47 +200,35 @@ Begin DesktopWindow MeshtasticWindow
          TextAlignment   =   0
          TextColor       =   &c000000
          Tooltip         =   ""
-         Top             =   488
+         Top             =   490
          Transparent     =   False
          Underline       =   False
          Visible         =   True
-         Width           =   183
+         Width           =   748
       End
-      Begin DesktopChart HPaChart
+      Begin SensorChart HPaChart
          AllowAutoDeactivate=   True
          AllowFocus      =   False
          AllowFocusRing  =   True
-         AllowPopover    =   True
          AllowTabs       =   False
-         BackgroundColor =   &cFFFFFF
-         Bold            =   False
-         DoubleBuffer    =   False
+         Backdrop        =   0
          Enabled         =   True
-         FontName        =   "System"
-         FontSize        =   11.0
-         FontUnit        =   0
-         GridColor       =   &ca6a6a6
-         HasLegend       =   True
-         Height          =   430
+         Height          =   400
          Index           =   -2147483648
          InitialParent   =   "TabPanel1"
-         Italic          =   False
          Left            =   40
          LockBottom      =   True
          LockedInPosition=   False
          LockLeft        =   True
          LockRight       =   True
          LockTop         =   True
-         Mode            =   0
          Scope           =   "0"
          TabIndex        =   0
-         TabPanelIndex   =   2
+         TabPanelIndex   =   3
          TabStop         =   True
-         TextColor       =   &c000000
-         Title           =   ""
          Tooltip         =   ""
-         Top             =   58
-         Underline       =   False
+         Top             =   82
+         Transparent     =   False
          Visible         =   True
          Width           =   748
       End
@@ -208,7 +243,7 @@ Begin DesktopWindow MeshtasticWindow
          Index           =   -2147483648
          InitialParent   =   "TabPanel1"
          Italic          =   False
-         Left            =   44
+         Left            =   40
          LockBottom      =   True
          LockedInPosition=   False
          LockLeft        =   True
@@ -218,17 +253,17 @@ Begin DesktopWindow MeshtasticWindow
          Scope           =   "0"
          Selectable      =   False
          TabIndex        =   1
-         TabPanelIndex   =   2
+         TabPanelIndex   =   3
          TabStop         =   True
          Text            =   "AverageHPa"
          TextAlignment   =   0
          TextColor       =   &c000000
          Tooltip         =   ""
-         Top             =   488
+         Top             =   490
          Transparent     =   False
          Underline       =   False
          Visible         =   True
-         Width           =   183
+         Width           =   748
       End
    End
 End
@@ -306,7 +341,8 @@ End
 		  Dim rh As Double = payload.Lookup("relative_humidity", -255).DoubleValue
 		  Dim pa As Double = payload.Lookup("barometric_pressure", -255).DoubleValue
 		  updateData(temp, rh, pa, TS)
-		  TempRHchart.Refresh()
+		  TempChart.Refresh()
+		  RHChart.Refresh()
 		  HPaChart.Refresh()
 		  
 		  // SQLite: logType 3 = Meshtastic device; the node itself as fromID and senderID
@@ -419,32 +455,18 @@ End
 
 	#tag Method, Flags = &h21
 		Private Sub SetupCharts()
-		  Dim rhDataset As New ChartLinearDataset( _
-		  "RH%", New ColorGroup(Color.Red, Color.Orange), _
-		  False, myRH)
-		  rhDataset.ChartType = ChartLinearDataset.ChartTypes.Line
+		  // One chart per quantity, so each gets a Y axis fitted to its own values (see ChartLook)
+		  StyleChart(TempChart, "Temperature", "0.0")
+		  TempChart.AddLabels dhtLabels
+		  TempChart.AddDataset LineSet("Temperature", "temperature", myTemp, " °C")
 		  
-		  Dim tempDataset As New ChartLinearDataset( _
-		  "Temp", New ColorGroup(Color.Blue, Color.White), _
-		  False, myTemp)
-		  tempDataset.ChartType = ChartLinearDataset.ChartTypes.Line
+		  StyleChart(RHChart, "Humidity", "0.0")
+		  RHChart.AddLabels dhtLabels
+		  RHChart.AddDataset LineSet("Relative humidity", "humidity", myRH, " %")
 		  
-		  TempRHchart.Title = "Temp / RH%"
-		  TempRHchart.Mode = DesktopChart.Modes.Line
-		  TempRHchart.GridColor = Color.Clear
-		  TempRHchart.AddLabels dhtLabels
-		  TempRHchart.AddDatasets tempDataset, rhDataset
-		  
-		  Dim hpaDataset As New ChartLinearDataset( _
-		  "HPa", New ColorGroup(Color.Teal, Color.Cyan), _
-		  True, myPA)
-		  hpaDataset.ChartType = ChartLinearDataset.ChartTypes.Bar
-		  
-		  HPaChart.Title = "HPa"
-		  HPaChart.Mode = DesktopChart.Modes.Bar
-		  HPaChart.GridColor = Color.LightGray
+		  StyleChart(HPaChart, "Pressure", "0.0")
 		  HPaChart.AddLabels paLabels
-		  HPaChart.AddDatasets hpaDataset
+		  HPaChart.AddDataset LineSet("Pressure", "pressure", myPA, " hPa")
 		  
 		  // Staggered below the other source windows
 		  Dim n As Integer = MyMeshtasticWindows.Count + MyAQIwindows.Count + MyMQTTwindows.Count
@@ -528,16 +550,25 @@ End
 		    myPA.RemoveAt(0)
 		  Wend
 		  
-		  TempRHchart.RemoveAllLabels()
-		  TempRHchart.AddLabels dhtLabels
+		  TempChart.RemoveAllLabels()
+		  TempChart.AddLabels dhtLabels
+		  RHChart.RemoveAllLabels()
+		  RHChart.AddLabels dhtLabels
 		  HPaChart.RemoveAllLabels()
 		  HPaChart.AddLabels paLabels
 		  
-		  laAverageTemp.Text = "x̄ T°: " + Format(MeanOf(myTemp), "-0.000")
-		  laAverageRH.Text = "x̄ RH%: " + Format(MeanOf(myRH), "-0.000")
-		  TempRHchart.Title = "Temp / RH% (entries: " + Str(myTemp.Count) + ")"
-		  laAverageHPa.Text = "x̄ HPa: " + Format(MeanOf(myPA), "-0.000")
-		  HPaChart.Title = "HPa (entries: " + Str(myPA.Count) + ")"
+		  laAverageTemp.Text = StatsText("Temperature", myTemp, " °C", "-0.0")
+		  laAverageRH.Text = StatsText("Humidity", myRH, " %", "0.0")
+		  laAverageHPa.Text = StatsText("Pressure", myPA, " hPa", "0.0")
+		  TempChart.Title = "Temperature  (" + SampleCount(myTemp.Count) + ")"
+		  RHChart.Title = "Humidity  (" + SampleCount(myRH.Count) + ")"
+		  HPaChart.Title = "Pressure  (" + SampleCount(myPA.Count) + ")"
+		  
+		  // The latest values at a glance
+		  If myTemp.Count > 0 Then
+		    laLatest.Text = Format(LastOf(myTemp), "-0.0") + " °C   ·   " + Format(LastOf(myRH), "0.0") + " %   ·   " + _
+		    Format(LastOf(myPA), "0.0") + " hPa      " + tsmp
+		  End If
 		End Sub
 	#tag EndMethod
 

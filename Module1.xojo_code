@@ -98,20 +98,14 @@ Protected Module Module1
 		  LogEvents "ExportMQTT", "Exported successfuly file " + fi.NativePath
 		  MessageBox "Exported successfuly file " + fi.NativePath
 		  
-		  title = "MQTT_" + feed + "_RSSISNR.png"
-		  fi = fg.Child(title)
-		  Dim p As Picture = w.SNRSSIchart.ToPicture
-		  p.Save(fi, Picture.Formats.PNG, 100)
-		  
-		  title = "MQTT_" + feed + "_DHT.png"
-		  fi = fg.Child(title)
-		  p = w.TempRHchart.ToPicture
-		  p.Save(fi, Picture.Formats.PNG, 100)
-		  
-		  title = "MQTT_" + feed + "_HPa.png"
-		  fi = fg.Child(title)
+		  Dim p As Picture = w.TempChart.ToPicture
+		  p.Save(fg.Child("MQTT_" + feed + "_Temperature.png"), Picture.Formats.PNG, 100)
+		  p = w.RHChart.ToPicture
+		  p.Save(fg.Child("MQTT_" + feed + "_Humidity.png"), Picture.Formats.PNG, 100)
 		  p = w.HPaChart.ToPicture
-		  p.Save(fi, Picture.Formats.PNG, 100)
+		  p.Save(fg.Child("MQTT_" + feed + "_Pressure.png"), Picture.Formats.PNG, 100)
+		  p = w.SNRSSIchart.ToPicture
+		  p.Save(fg.Child("MQTT_" + feed + "_RSSISNR.png"), Picture.Formats.PNG, 100)
 		  
 		End Sub
 	#tag EndMethod
@@ -443,8 +437,10 @@ Protected Module Module1
 		  p.Save(fg.Child("AQI_" + w.MyID + "_Temperature.png"), Picture.Formats.PNG, 100)
 		  p = w.HumidityChart.ToPicture
 		  p.Save(fg.Child("AQI_" + w.MyID + "_Humidity.png"), Picture.Formats.PNG, 100)
-		  p = w.VOCO2chart.ToPicture
-		  p.Save(fg.Child("AQI_" + w.MyID + "_VOC_CO2.png"), Picture.Formats.PNG, 100)
+		  p = w.CO2Chart.ToPicture
+		  p.Save(fg.Child("AQI_" + w.MyID + "_CO2.png"), Picture.Formats.PNG, 100)
+		  p = w.VOCChart.ToPicture
+		  p.Save(fg.Child("AQI_" + w.MyID + "_VOC.png"), Picture.Formats.PNG, 100)
 		  p = w.PMchart.ToPicture
 		  p.Save(fg.Child("AQI_" + w.MyID + "_PM.png"), Picture.Formats.PNG, 100)
 		End Sub
@@ -506,10 +502,12 @@ Protected Module Module1
 		  LogEvents "ExportDevice", "Exported successfuly file " + fi.NativePath
 		  MessageBox "Exported successfuly file " + fi.NativePath
 		  
-		  Dim p As Picture = w.TempRHchart.ToPicture
-		  p.Save(fg.Child("DEV_" + feed + "_DHT.png"), Picture.Formats.PNG, 100)
+		  Dim p As Picture = w.TempChart.ToPicture
+		  p.Save(fg.Child("DEV_" + feed + "_Temperature.png"), Picture.Formats.PNG, 100)
+		  p = w.RHChart.ToPicture
+		  p.Save(fg.Child("DEV_" + feed + "_Humidity.png"), Picture.Formats.PNG, 100)
 		  p = w.HPaChart.ToPicture
-		  p.Save(fg.Child("DEV_" + feed + "_HPa.png"), Picture.Formats.PNG, 100)
+		  p.Save(fg.Child("DEV_" + feed + "_Pressure.png"), Picture.Formats.PNG, 100)
 		End Sub
 	#tag EndMethod
 

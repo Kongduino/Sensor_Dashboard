@@ -52,7 +52,7 @@ The fields are remembered between runs (see [Where things are kept](#where-thing
 | Username, Password | Broker login, if needed |
 | Keys | Channel keys, if your channels don't use the default key (see below) |
 
-The window charts RSSI / SNR, temperature / humidity and pressure, with running averages. Its title shows the connection state: *connected*, *reconnecting*, *refused: bad username or password*… It reconnects on its own if the broker drops the connection.
+The window charts temperature, humidity, pressure and RSSI / SNR. Its title shows the connection state: *connected*, *reconnecting*, *refused: bad username or password*… It reconnects on its own if the broker drops the connection.
 
 **Channel keys.** Packets are decrypted with the channel key (PSK). By default every channel is tried with the default key, `AQ==`. For a channel with its own key, fill in **Keys**:
 
@@ -70,7 +70,7 @@ The Password and Keys fields are masked, with a **Show** button to check what yo
 |---|---|
 | AQI ID | The device's ID: its MAC address, 12 hex digits |
 
-The first reading is fetched in the background; the window opens with it, titled with the device's nickname. After that, the cloud is checked every minute, and a reading is added only when the device has uploaded a new one. Devices typically upload every 10 minutes. The window charts temperature and humidity (SEN55 and SCD40), VOC / CO₂ and particulate matter.
+The first reading is fetched in the background; the window opens with it, titled with the device's nickname. After that, the cloud is checked every minute, and a reading is added only when the device has uploaded a new one. Devices typically upload every 10 minutes. The window charts temperature and humidity (SEN55 and SCD40), CO₂, the VOC index and particulate matter.
 
 ### Meshtastic device
 
@@ -79,12 +79,14 @@ The first reading is fetched in the background; the window opens with it, titled
 | Network | The node's IP address or host name, and its port (4403) |
 | USB | The serial port (the menu lists the ports; the first USB port is preselected) |
 
-The app connects to the node the way the Meshtastic apps do: no broker, no keys, since the node decrypts its packets itself. The window is titled with the node's name and ID, and charts the **node's own sensor**: temperature / humidity and pressure. A connected node sends its sensor readings to the app **every minute**, independently of its broadcast interval on the mesh. If the node drops off (a reboot, WiFi loss), the window tries again every 30 seconds.
+The app connects to the node the way the Meshtastic apps do: no broker, no keys, since the node decrypts its packets itself. The window is titled with the node's name and ID, and charts the **node's own sensor**: temperature, humidity and pressure. A connected node sends its sensor readings to the app **every minute**, independently of its broadcast interval on the mesh. If the node drops off (a reboot, WiFi loss), the window tries again every 30 seconds.
 
 Only one window per node: a node has a single queue towards its clients, so two connections would share its readings. Adding a node that's already followed shows which connection follows it. While the app holds the USB port, no other program (the Meshtastic CLI, for example) can use it.
 
 ## Charts, data and export
 
+- **One chart per quantity** (temperature, humidity, pressure, CO₂, VOC, PM, radio), each with a Y axis fitted to its values, the value and time under the mouse, and the same colour for a quantity in every window, in light and dark mode.
+- Each window shows the **latest values** at the top, and **min / avg / max** under each chart, over the samples shown.
 - Charts keep the last 100 samples of each source. The labels under them are times of day (`HH:MM` or `HH:MM:SS`).
 - **Every reading is stored** in SQLite (`records.sqlite`, table `telemetry`) with its source type, session, time, node or device ID and the full payload as JSON. Source types: `1` M5 AQI, `2` Meshtastic MQTT, `3` Meshtastic device.
 - Each run of the app is a **session**, with its own folder `Session_<id>/` holding `Event_Log.txt`, a log of everything the app did: connections, every packet received, every value charted.
@@ -92,9 +94,9 @@ Only one window per node: a node has a single queue towards its clients, so two 
 
 | Source | Files |
 |---|---|
-| MQTT | `MQTT_<gateway>.csv`, `MQTT_<gateway>_RSSISNR.png`, `_DHT.png`, `_HPa.png` |
-| M5Stack AQI | `AQI_<device>.csv`, `AQI_<device>_Temperature.png`, `_Humidity.png`, `_VOC_CO2.png`, `_PM.png` |
-| Meshtastic device | `DEV_<node>.csv`, `DEV_<node>_DHT.png`, `_HPa.png` |
+| MQTT | `MQTT_<gateway>.csv`, `MQTT_<gateway>_Temperature.png`, `_Humidity.png`, `_Pressure.png`, `_RSSISNR.png` |
+| M5Stack AQI | `AQI_<device>.csv`, `AQI_<device>_Temperature.png`, `_Humidity.png`, `_CO2.png`, `_VOC.png`, `_PM.png` |
+| Meshtastic device | `DEV_<node>.csv`, `DEV_<node>_Temperature.png`, `_Humidity.png`, `_Pressure.png` |
 
 The CSV files use `;` as separator. They have one row per reading, a timestamp column and one column per value. Missing values are empty cells.
 
@@ -115,6 +117,9 @@ MQTTwindow.xojo_window          a Meshtastic MQTT feed
 M5AQIwindow.xojo_window         an M5Stack AQI device
 MeshtasticWindow.xojo_window    a Meshtastic node over TCP or USB
 Module1.xojo_code               session, database, event log, exports, settings, AQI parsing
+SensorChart.xojo_code           the chart control (a DesktopCanvas): fitted axis, gradient, hover values
+SensorSeries.xojo_code          one series of a SensorChart
+ChartLook.xojo_code             colours per quantity, series helpers, min / avg / max
 App.xojo_code, MainMenuBar.xojo_menu, Build Automation.xojo_code
 Library/                        MQTT_Xojo's library (MQTT client, protobuf, Meshtastic decoding and
                                 crypto, MeshDeviceLink), a copy of github.com/Kongduino/MQTT_Xojo/Library

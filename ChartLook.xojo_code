@@ -1,0 +1,168 @@
+#tag Module
+Protected Module ChartLook
+	#tag Method, Flags = &h0
+		Function BarSet(label As String, kind As String, values() As Double, suffix As String) As SensorSeries
+		  // A bar series (rounded bars from 0); values is the window's own array
+		  Dim s As New SensorSeries
+		  s.Label = label
+		  s.Kind = kind
+		  s.Values = values
+		  s.Suffix = suffix
+		  s.IsBar = True
+		  Return s
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function ChartColor(kind As String) As Color
+		  // One colour per quantity, the same in every window, with a variant for dark mode
+		  Dim dark As Boolean = Color.IsDarkMode
+		  Select Case kind
+		  Case "temperature" // orange
+		    Return If(dark, &cFF922B, &cE8590C)
+		  Case "temperature2" // red (second sensor)
+		    Return If(dark, &cFF6B6B, &cC92A2A)
+		  Case "humidity" // blue
+		    Return If(dark, &c4DABF7, &c1971C2)
+		  Case "humidity2" // indigo (second sensor)
+		    Return If(dark, &c91A7FF, &c3B5BDB)
+		  Case "pressure" // teal
+		    Return If(dark, &c3BC9DB, &c0C8599)
+		  Case "rssi" // green
+		    Return If(dark, &c69DB7C, &c2F9E44)
+		  Case "snr" // grey
+		    Return If(dark, &cCED4DA, &c868E96)
+		  Case "co2" // violet
+		    Return If(dark, &cB197FC, &c7048E8)
+		  Case "voc" // pink
+		    Return If(dark, &cF783AC, &cC2255C)
+		  Case "pm1" // yellow
+		    Return If(dark, &cFFE066, &cFAB005)
+		  Case "pm25" // orange
+		    Return If(dark, &cFFA94D, &cFD7E14)
+		  Case "pm4" // red
+		    Return If(dark, &cFF8787, &cE03131)
+		  Case "pm10" // grape
+		    Return If(dark, &cDA77F2, &c862E9C)
+		  Else
+		    Return If(dark, &cADB5BD, &c495057)
+		  End Select
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function LineSet(label As String, kind As String, values() As Double, suffix As String, filled As Boolean = True) As SensorSeries
+		  // A line series, with a gradient under it unless filled is False; values is the window's own array
+		  Dim s As New SensorSeries
+		  s.Label = label
+		  s.Kind = kind
+		  s.Values = values
+		  s.Suffix = suffix
+		  s.Filled = filled
+		  Return s
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Sub StyleChart(c As SensorChart, title As String, valueFormat As String, bars As Boolean = False)
+		  // Clears a chart and sets its title. The look itself is in SensorChart; valueFormat and bars are kept for
+		  // the callers (SensorChart picks the decimals from the axis steps, and each series says whether it is a bar)
+		  c.RemoveAllLabels
+		  c.RemoveAllDatasets
+		  c.Title = title
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function LastOf(values() As Double) As Double
+		  // The latest sample, 0 when there are none yet
+		  If values.Count = 0 Then Return 0
+		  Return values(values.LastIndex)
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function MaxOf(values() As Double) As Double
+		  If values.Count = 0 Then Return 0
+		  Dim m As Double = values(0)
+		  For Each v As Double In values
+		    If v > m Then m = v
+		  Next
+		  Return m
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function MinOf(values() As Double) As Double
+		  If values.Count = 0 Then Return 0
+		  Dim m As Double = values(0)
+		  For Each v As Double In values
+		    If v < m Then m = v
+		  Next
+		  Return m
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function StatsText(name As String, values() As Double, unit As String, fmt As String) As String
+		  // "Temperature: min 24.1 · avg 25.3 · max 26.0 °C" over the samples shown
+		  If values.Count = 0 Then Return name + ": no data yet"
+		  Return name + ":  min " + Format(MinOf(values), fmt) + "  ·  avg " + Format(MeanOf(values), fmt) + _
+		  "  ·  max " + Format(MaxOf(values), fmt) + unit
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function SampleCount(n As Integer) As String
+		  // "1 sample", "12 samples"
+		  If n = 1 Then Return "1 sample"
+		  Return Str(n) + " samples"
+		End Function
+	#tag EndMethod
+
+
+
+	#tag ViewBehavior
+		#tag ViewProperty
+			Name="Name"
+			Visible=true
+			Group="ID"
+			InitialValue=""
+			Type="String"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="Index"
+			Visible=true
+			Group="ID"
+			InitialValue="-2147483648"
+			Type="Integer"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="Super"
+			Visible=true
+			Group="ID"
+			InitialValue=""
+			Type="String"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="Left"
+			Visible=true
+			Group="Position"
+			InitialValue="0"
+			Type="Integer"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="Top"
+			Visible=true
+			Group="Position"
+			InitialValue="0"
+			Type="Integer"
+			EditorType=""
+		#tag EndViewProperty
+	#tag EndViewBehavior
+End Module
+#tag EndModule

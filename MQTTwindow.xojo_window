@@ -11,7 +11,7 @@ Begin DesktopWindow MQTTwindow
    HasMaximizeButton=   True
    HasMinimizeButton=   True
    HasTitleBar     =   True
-   Height          =   528
+   Height          =   560
    ImplicitInstance=   True
    MacProcID       =   0
    MaximumHeight   =   32000
@@ -25,6 +25,39 @@ Begin DesktopWindow MQTTwindow
    Type            =   0
    Visible         =   False
    Width           =   828
+   Begin DesktopLabel laLatest
+      AllowAutoDeactivate=   True
+      Bold            =   True
+      Enabled         =   True
+      FontName        =   "System"
+      FontSize        =   15.0
+      FontUnit        =   0
+      Height          =   24
+      Index           =   -2147483648
+      InitialParent   =   ""
+      Italic          =   False
+      Left            =   20
+      LockBottom      =   False
+      LockedInPosition=   False
+      LockLeft        =   True
+      LockRight       =   True
+      LockTop         =   True
+      Multiline       =   False
+      Scope           =   0
+      Selectable      =   True
+      TabIndex        =   1
+      TabPanelIndex   =   0
+      TabStop         =   True
+      Text            =   "Waiting for the first reading…"
+      TextAlignment   =   0
+      TextColor       =   &c000000
+      Tooltip         =   "The latest values"
+      Top             =   12
+      Transparent     =   False
+      Underline       =   False
+      Visible         =   True
+      Width           =   788
+   End
    Begin DesktopTabPanel TabPanel1
       AllowAutoDeactivate=   True
       Bold            =   False
@@ -32,7 +65,7 @@ Begin DesktopWindow MQTTwindow
       FontName        =   "System"
       FontSize        =   0.0
       FontUnit        =   0
-      Height          =   488
+      Height          =   504
       Index           =   -2147483648
       Italic          =   False
       Left            =   20
@@ -44,90 +77,92 @@ Begin DesktopWindow MQTTwindow
       Panels          =   ""
       Scope           =   0
       SmallTabs       =   False
-      TabDefinition   =   "T° / RH\rRSSI / SNR\rHPa"
+      TabDefinition   =   "Temperature\rHumidity\rPressure\rRSSI / SNR"
       TabIndex        =   0
       TabPanelIndex   =   0
       TabStop         =   True
       Tooltip         =   ""
-      Top             =   20
+      Top             =   44
       Transparent     =   False
       Underline       =   False
-      Value           =   2
+      Value           =   0
       Visible         =   True
       Width           =   788
-      Begin DesktopChart TempRHchart
+      Begin SensorChart TempChart
          AllowAutoDeactivate=   True
          AllowFocus      =   False
          AllowFocusRing  =   True
-         AllowPopover    =   True
          AllowTabs       =   False
-         BackgroundColor =   &cFFFFFF
-         Bold            =   False
-         DoubleBuffer    =   False
+         Backdrop        =   0
          Enabled         =   True
-         FontName        =   "System"
-         FontSize        =   11.0
-         FontUnit        =   0
-         GridColor       =   &ca6a6a6
-         HasLegend       =   True
-         Height          =   430
+         Height          =   400
          Index           =   -2147483648
          InitialParent   =   "TabPanel1"
-         Italic          =   False
          Left            =   40
          LockBottom      =   True
          LockedInPosition=   False
          LockLeft        =   True
          LockRight       =   True
          LockTop         =   True
-         Mode            =   0
          Scope           =   0
          TabIndex        =   0
          TabPanelIndex   =   1
          TabStop         =   True
-         TextColor       =   &c000000
-         Title           =   ""
          Tooltip         =   ""
-         Top             =   58
-         Underline       =   False
+         Top             =   82
+         Transparent     =   False
          Visible         =   True
          Width           =   748
       End
-      Begin DesktopChart SNRSSIchart
+      Begin SensorChart RHChart
          AllowAutoDeactivate=   True
          AllowFocus      =   False
          AllowFocusRing  =   True
-         AllowPopover    =   True
          AllowTabs       =   False
-         BackgroundColor =   &cFFFFFF
-         Bold            =   False
-         DoubleBuffer    =   False
+         Backdrop        =   0
          Enabled         =   True
-         FontName        =   "System"
-         FontSize        =   11.0
-         FontUnit        =   0
-         GridColor       =   &ca6a6a6
-         HasLegend       =   True
-         Height          =   430
+         Height          =   400
          Index           =   -2147483648
          InitialParent   =   "TabPanel1"
-         Italic          =   False
          Left            =   40
          LockBottom      =   True
          LockedInPosition=   False
          LockLeft        =   True
          LockRight       =   True
          LockTop         =   True
-         Mode            =   0
          Scope           =   0
          TabIndex        =   0
          TabPanelIndex   =   2
          TabStop         =   True
-         TextColor       =   &c000000
-         Title           =   ""
          Tooltip         =   ""
-         Top             =   58
-         Underline       =   False
+         Top             =   82
+         Transparent     =   False
+         Visible         =   True
+         Width           =   748
+      End
+      Begin SensorChart SNRSSIchart
+         AllowAutoDeactivate=   True
+         AllowFocus      =   False
+         AllowFocusRing  =   True
+         AllowTabs       =   False
+         Backdrop        =   0
+         Enabled         =   True
+         Height          =   400
+         Index           =   -2147483648
+         InitialParent   =   "TabPanel1"
+         Left            =   40
+         LockBottom      =   True
+         LockedInPosition=   False
+         LockLeft        =   True
+         LockRight       =   True
+         LockTop         =   True
+         Scope           =   0
+         TabIndex        =   0
+         TabPanelIndex   =   4
+         TabStop         =   True
+         Tooltip         =   ""
+         Top             =   82
+         Transparent     =   False
          Visible         =   True
          Width           =   748
       End
@@ -142,7 +177,7 @@ Begin DesktopWindow MQTTwindow
          Index           =   -2147483648
          InitialParent   =   "TabPanel1"
          Italic          =   False
-         Left            =   235
+         Left            =   40
          LockBottom      =   True
          LockedInPosition=   False
          LockLeft        =   True
@@ -152,17 +187,17 @@ Begin DesktopWindow MQTTwindow
          Scope           =   0
          Selectable      =   False
          TabIndex        =   1
-         TabPanelIndex   =   1
+         TabPanelIndex   =   2
          TabStop         =   True
          Text            =   "AverageRH%"
          TextAlignment   =   0
          TextColor       =   &c000000
          Tooltip         =   ""
-         Top             =   488
+         Top             =   490
          Transparent     =   False
          Underline       =   False
          Visible         =   True
-         Width           =   183
+         Width           =   748
       End
       Begin DesktopLabel laAverageTemp
          AllowAutoDeactivate=   True
@@ -191,11 +226,11 @@ Begin DesktopWindow MQTTwindow
          TextAlignment   =   0
          TextColor       =   &c000000
          Tooltip         =   ""
-         Top             =   488
+         Top             =   490
          Transparent     =   False
          Underline       =   False
          Visible         =   True
-         Width           =   183
+         Width           =   748
       End
       Begin DesktopLabel laAverageRSSI
          AllowAutoDeactivate=   True
@@ -208,7 +243,7 @@ Begin DesktopWindow MQTTwindow
          Index           =   -2147483648
          InitialParent   =   "TabPanel1"
          Italic          =   False
-         Left            =   44
+         Left            =   40
          LockBottom      =   True
          LockedInPosition=   False
          LockLeft        =   True
@@ -218,17 +253,17 @@ Begin DesktopWindow MQTTwindow
          Scope           =   0
          Selectable      =   False
          TabIndex        =   1
-         TabPanelIndex   =   2
+         TabPanelIndex   =   4
          TabStop         =   True
          Text            =   "AverageRSSI"
          TextAlignment   =   0
          TextColor       =   &c000000
          Tooltip         =   ""
-         Top             =   488
+         Top             =   490
          Transparent     =   False
          Underline       =   False
          Visible         =   True
-         Width           =   183
+         Width           =   360
       End
       Begin DesktopLabel laAverageSNR
          AllowAutoDeactivate=   True
@@ -241,7 +276,7 @@ Begin DesktopWindow MQTTwindow
          Index           =   -2147483648
          InitialParent   =   "TabPanel1"
          Italic          =   False
-         Left            =   239
+         Left            =   420
          LockBottom      =   True
          LockedInPosition=   False
          LockLeft        =   True
@@ -251,53 +286,41 @@ Begin DesktopWindow MQTTwindow
          Scope           =   0
          Selectable      =   False
          TabIndex        =   2
-         TabPanelIndex   =   2
+         TabPanelIndex   =   4
          TabStop         =   True
          Text            =   "AverageSNR"
          TextAlignment   =   0
          TextColor       =   &c000000
          Tooltip         =   ""
-         Top             =   488
+         Top             =   490
          Transparent     =   False
          Underline       =   False
          Visible         =   True
-         Width           =   183
+         Width           =   368
       End
-      Begin DesktopChart HPaChart
+      Begin SensorChart HPaChart
          AllowAutoDeactivate=   True
          AllowFocus      =   False
          AllowFocusRing  =   True
-         AllowPopover    =   True
          AllowTabs       =   False
-         BackgroundColor =   &cFFFFFF
-         Bold            =   False
-         DoubleBuffer    =   False
+         Backdrop        =   0
          Enabled         =   True
-         FontName        =   "System"
-         FontSize        =   11.0
-         FontUnit        =   0
-         GridColor       =   &ca6a6a6
-         HasLegend       =   True
-         Height          =   430
+         Height          =   400
          Index           =   -2147483648
          InitialParent   =   "TabPanel1"
-         Italic          =   False
          Left            =   40
          LockBottom      =   True
          LockedInPosition=   False
          LockLeft        =   True
          LockRight       =   True
          LockTop         =   True
-         Mode            =   0
          Scope           =   0
          TabIndex        =   0
          TabPanelIndex   =   3
          TabStop         =   True
-         TextColor       =   &c000000
-         Title           =   ""
          Tooltip         =   ""
-         Top             =   58
-         Underline       =   False
+         Top             =   82
+         Transparent     =   False
          Visible         =   True
          Width           =   748
       End
@@ -312,7 +335,7 @@ Begin DesktopWindow MQTTwindow
          Index           =   -2147483648
          InitialParent   =   "TabPanel1"
          Italic          =   False
-         Left            =   44
+         Left            =   40
          LockBottom      =   True
          LockedInPosition=   False
          LockLeft        =   True
@@ -328,11 +351,11 @@ Begin DesktopWindow MQTTwindow
          TextAlignment   =   0
          TextColor       =   &c000000
          Tooltip         =   ""
-         Top             =   488
+         Top             =   490
          Transparent     =   False
          Underline       =   False
          Visible         =   True
-         Width           =   183
+         Width           =   748
       End
    End
    Begin MQTTClient MQTTClient1
@@ -411,9 +434,10 @@ End
 		      rh = payload.Lookup("relative_humidity", -255).DoubleValue
 		      pa = payload.Lookup("barometric_pressure", -255).DoubleValue
 		      updateData(rssi, snr, temp, rh, pa, TS)
-		      SNRSSIchart.Refresh()
-		      TempRHchart.Refresh()
+		      TempChart.Refresh()
+		      RHChart.Refresh()
 		      HPaChart.Refresh()
+		      SNRSSIchart.Refresh()
 		      LogTelemetry(2, fromID, senderID, Str(TS), payload.ToString, rssi, snr, MySessionNum)
 		    End If
 		  End If
@@ -470,60 +494,24 @@ End
 		  MQTTClient1.Connect(host, port, clientID)
 		  
 		  
-		  //myTemp.Add 0
-		  //myRH.Add 0
-		  //myPA.Add 0
-		  //myRSSI.Add -148
-		  //mySNR.Add -20
-		  //snrLabels.Add "."
-		  //dhtLabels.Add "."
+		  // Charts: one per quantity, so each gets a Y axis fitted to its own values (see ChartLook)
+		  StyleChart(TempChart, "Temperature", "0.0")
+		  TempChart.AddLabels dhtLabels
+		  TempChart.AddDataset LineSet("Temperature", "temperature", myTemp, " °C")
 		  
-		  Dim snrDataset As New ChartLinearDataset( _
-		  "RSSI", New ColorGroup(Color.Green, Color.White), _
-		  False, myRSSI)
-		  snrDataset.ChartType = ChartLinearDataset.ChartTypes.Line
+		  StyleChart(RHChart, "Humidity", "0.0")
+		  RHChart.AddLabels dhtLabels
+		  RHChart.AddDataset LineSet("Relative humidity", "humidity", myRH, " %")
 		  
-		  Dim rssiDataset As New ChartLinearDataset( _
-		  "SNR", New ColorGroup(Color.Gray, Color.LightGray), _
-		  False, mySNR)
-		  rssiDataset.ChartType = ChartLinearDataset.ChartTypes.Line
-		  
-		  SNRSSIchart.Title = "RSSI / SNR"
-		  SNRSSIchart.Mode = DesktopChart.Modes.Line
-		  SNRSSIchart.GridColor = Color.Clear
-		  SNRSSIchart.AddLabels snrLabels
-		  SNRSSIchart.AddDatasets snrDataset, rssiDataset
-		  
-		  Dim rhDataset As New ChartLinearDataset( _
-		  "RH%", New ColorGroup(Color.Red, Color.Orange), _
-		  False, myRH)
-		  rhDataset.ChartType = ChartLinearDataset.ChartTypes.Line
-		  
-		  Dim tempDataset As New ChartLinearDataset( _
-		  "Temp", New ColorGroup(Color.Blue, Color.White), _
-		  False, myTemp)
-		  tempDataset.ChartType = ChartLinearDataset.ChartTypes.Line
-		  
-		  TempRHchart.Title = "Temp / RH%"
-		  TempRHchart.Mode = DesktopChart.Modes.Line
-		  TempRHchart.GridColor = Color.Clear
-		  TempRHchart.AddLabels dhtLabels
-		  TempRHchart.AddDatasets tempDataset, rhDataset
-		  
-		  Dim hpaDataset As New ChartLinearDataset( _
-		  "HPa", New ColorGroup(Color.Teal, Color.Cyan), _
-		  True, myPA)
-		  hpaDataset.ChartType = ChartLinearDataset.ChartTypes.Bar
-		  
-		  HPaChart.Title = "HPa"
-		  HPaChart.Mode = DesktopChart.Modes.Bar
-		  HPaChart.GridColor = Color.LightGray
+		  StyleChart(HPaChart, "Pressure", "0.0")
 		  HPaChart.AddLabels paLabels
-		  HPaChart.AddDatasets hpaDataset
+		  HPaChart.AddDataset LineSet("Pressure", "pressure", myPA, " hPa")
+		  
+		  StyleChart(SNRSSIchart, "RSSI / SNR", "0.0")
+		  SNRSSIchart.AddLabels snrLabels
+		  SNRSSIchart.AddDatasets LineSet("RSSI", "rssi", myRSSI, " dBm"), LineSet("SNR", "snr", mySNR, " dB")
 		  
 		  Self.Show()
-		  SNRSSIchart.Refresh()
-		  TempRHchart.Refresh()
 		  
 		End Sub
 	#tag EndMethod
@@ -572,21 +560,37 @@ End
 		    mySNR.RemoveAt(0)
 		  Wend
 		  
-		  TempRHchart.RemoveAllLabels()
-		  TempRHchart.AddLabels dhtLabels
+		  TempChart.RemoveAllLabels()
+		  TempChart.AddLabels dhtLabels
+		  RHChart.RemoveAllLabels()
+		  RHChart.AddLabels dhtLabels
 		  SNRSSIchart.RemoveAllLabels()
 		  SNRSSIchart.AddLabels snrLabels
 		  HPaChart.RemoveAllLabels()
 		  HPaChart.AddLabels paLabels
 		  
-		  laAverageTemp.Text = "x̄ T°: " + Format(MeanOf(myTemp), "-0.000")
-		  laAverageRH.Text = "x̄ RH%: " + Format(MeanOf(myRH), "-0.000")
-		  TempRHchart.Title = "Temp / RH% (entries: " + Str(myTemp.Count) + ")"
-		  laAverageSNR.Text = "x̄ SNR: " + Format(MeanOf(mySNR), "-0.000")
-		  laAverageRSSI.Text = "x̄ RSSI: " + Format(MeanOf(myRSSI), "-0.000")
-		  SNRSSIchart.Title = "RSSI / SNR (entries: " + Str(myRSSI.Count) + ")"
-		  laAverageHPa.Text = "x̄ HPa: " + Format(MeanOf(myPA), "-0.000")
-		  HPaChart.Title = "HPa (entries: " + Str(myPA.Count) + ")"
+		  laAverageTemp.Text = StatsText("Temperature", myTemp, " °C", "-0.0")
+		  laAverageRH.Text = StatsText("Humidity", myRH, " %", "0.0")
+		  laAverageHPa.Text = StatsText("Pressure", myPA, " hPa", "0.0")
+		  laAverageRSSI.Text = StatsText("RSSI", myRSSI, " dBm", "-0")
+		  laAverageSNR.Text = StatsText("SNR", mySNR, " dB", "-0.0")
+		  TempChart.Title = "Temperature  (" + SampleCount(myTemp.Count) + ")"
+		  RHChart.Title = "Humidity  (" + SampleCount(myRH.Count) + ")"
+		  HPaChart.Title = "Pressure  (" + SampleCount(myPA.Count) + ")"
+		  SNRSSIchart.Title = "RSSI / SNR  (" + SampleCount(myRSSI.Count) + ")"
+		  
+		  // The latest values at a glance
+		  Dim parts() As String
+		  If myTemp.Count > 0 Then
+		    parts.Add Format(LastOf(myTemp), "-0.0") + " °C"
+		    parts.Add Format(LastOf(myRH), "0.0") + " %"
+		    parts.Add Format(LastOf(myPA), "0.0") + " hPa"
+		  End If
+		  If myRSSI.Count > 0 Then
+		    parts.Add "RSSI " + Format(LastOf(myRSSI), "-0") + " dBm"
+		    parts.Add "SNR " + Format(LastOf(mySNR), "-0.0") + " dB"
+		  End If
+		  If parts.Count > 0 Then laLatest.Text = Join(parts, "   ·   ") + "      " + tsmp
 		End Sub
 	#tag EndMethod
 
