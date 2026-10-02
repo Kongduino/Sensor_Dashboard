@@ -438,7 +438,11 @@ End
 		      RHChart.Refresh()
 		      HPaChart.Refresh()
 		      SNRSSIchart.Refresh()
-		      LogTelemetry(2, fromID, senderID, Str(TS), payload.ToString, rssi, snr, MySessionNum)
+		      // SQLite (and so the export): sensor readings only, as in the Meshtastic window. Device metrics
+		      // (battery, voltage...) still feed the RSSI / SNR chart, but aren't stored
+		      If payload.HasKey("temperature") Then
+		        LogTelemetry(2, fromID, senderID, Str(TS), payload.ToString, rssi, snr, MySessionNum)
+		      End If
 		    End If
 		  End If
 		  
