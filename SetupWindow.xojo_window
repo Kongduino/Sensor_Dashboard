@@ -1185,6 +1185,33 @@ End
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
+		Private Sub LoadSetupFields()
+		  Dim f As FolderItem = SettingsFile()
+		  If f = Nil Or Not f.Exists Then Return
+		  Dim js As JSONItem
+		  Try
+		    Dim tis As TextInputStream = TextInputStream.Open(f)
+		    js = New JSONItem(tis.ReadAll(Encodings.UTF8))
+		    tis.Close
+		  Catch e As RuntimeException
+		    LogEvents "Settings", "Couldn't read " + f.NativePath + ": " + e.Message
+		    Return
+		  End Try
+		  If js.HasKey("mqtt_broker") Then tfMQTTSite.Text = js.Value("mqtt_broker").StringValue
+		  If js.HasKey("mqtt_root_topic") Then tfMQTTTopic.Text = js.Value("mqtt_root_topic").StringValue
+		  If js.HasKey("mqtt_gateway_id") Then tfMQTTNodeID.Text = js.Value("mqtt_gateway_id").StringValue
+		  If js.HasKey("mqtt_username") Then tfMQTTUsername.Text = js.Value("mqtt_username").StringValue
+		  If js.HasKey("mqtt_password") Then tfMQTTUserPassword.Text = js.Value("mqtt_password").StringValue
+		  If js.HasKey("mqtt_keys") Then tfMQTTKeys.Text = js.Value("mqtt_keys").StringValue
+		  If js.HasKey("aqi_device_id") Then tfAQIID.Text = js.Value("aqi_device_id").StringValue
+		  If js.HasKey("device_host") Then tfNetworkHost.Text = js.Value("device_host").StringValue
+		  If js.HasKey("device_port") Then tfNetworkPort.Text = js.Value("device_port").StringValue
+		  mSavedSerialPort = js.Lookup("serial_port", "").StringValue
+		  LogEvents "Settings", "Fields loaded from " + f.NativePath
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
 		Private Sub RefreshSerialPorts()
 		  // The USB tab's port menu, in SerialDevice order (the menu row is the device index)
 		  Dim previous As String = mSavedSerialPort
@@ -1219,33 +1246,6 @@ End
 		      End If
 		    End If
 		  Next
-		End Sub
-	#tag EndMethod
-
-	#tag Method, Flags = &h21
-		Private Sub LoadSetupFields()
-		  Dim f As FolderItem = SettingsFile()
-		  If f = Nil Or Not f.Exists Then Return
-		  Dim js As JSONItem
-		  Try
-		    Dim tis As TextInputStream = TextInputStream.Open(f)
-		    js = New JSONItem(tis.ReadAll(Encodings.UTF8))
-		    tis.Close
-		  Catch e As RuntimeException
-		    LogEvents "Settings", "Couldn't read " + f.NativePath + ": " + e.Message
-		    Return
-		  End Try
-		  If js.HasKey("mqtt_broker") Then tfMQTTSite.Text = js.Value("mqtt_broker").StringValue
-		  If js.HasKey("mqtt_root_topic") Then tfMQTTTopic.Text = js.Value("mqtt_root_topic").StringValue
-		  If js.HasKey("mqtt_gateway_id") Then tfMQTTNodeID.Text = js.Value("mqtt_gateway_id").StringValue
-		  If js.HasKey("mqtt_username") Then tfMQTTUsername.Text = js.Value("mqtt_username").StringValue
-		  If js.HasKey("mqtt_password") Then tfMQTTUserPassword.Text = js.Value("mqtt_password").StringValue
-		  If js.HasKey("mqtt_keys") Then tfMQTTKeys.Text = js.Value("mqtt_keys").StringValue
-		  If js.HasKey("aqi_device_id") Then tfAQIID.Text = js.Value("aqi_device_id").StringValue
-		  If js.HasKey("device_host") Then tfNetworkHost.Text = js.Value("device_host").StringValue
-		  If js.HasKey("device_port") Then tfNetworkPort.Text = js.Value("device_port").StringValue
-		  mSavedSerialPort = js.Lookup("serial_port", "").StringValue
-		  LogEvents "Settings", "Fields loaded from " + f.NativePath
 		End Sub
 	#tag EndMethod
 
@@ -1548,6 +1548,18 @@ End
 		End Function
 	#tag EndEvent
 #tag EndEvents
+#tag Events tfMQTTKeys
+	#tag Event
+		Sub KeyUp(key As String)
+		  If Key = Chr(13) And btAddMQTT.Enabled Then btAddMQTT.Press()
+		End Sub
+	#tag EndEvent
+	#tag Event
+		Function KeyDown(key As String) As Boolean
+		  If Key = Chr(13) Then Return True
+		End Function
+	#tag EndEvent
+#tag EndEvents
 #tag Events btShowPassword
 	#tag Event
 		Sub Pressed()
@@ -1574,16 +1586,11 @@ End
 		End Sub
 	#tag EndEvent
 #tag EndEvents
-#tag Events tfMQTTKeys
+#tag Events tpConnectionTypes
 	#tag Event
-		Sub KeyUp(key As String)
-		  If Key = Chr(13) And btAddMQTT.Enabled Then btAddMQTT.Press()
+		Sub PanelChanged()
+		  If Me.SelectedPanelIndex = 1 Then RefreshSerialPorts // USB
 		End Sub
-	#tag EndEvent
-	#tag Event
-		Function KeyDown(key As String) As Boolean
-		  If Key = Chr(13) Then Return True
-		End Function
 	#tag EndEvent
 #tag EndEvents
 #tag Events tfNetworkHost
@@ -1596,29 +1603,6 @@ End
 		Function KeyDown(key As String) As Boolean
 		  If Key = Chr(13) Then Return True
 		End Function
-	#tag EndEvent
-#tag EndEvents
-#tag Events tpConnectionTypes
-	#tag Event
-		Sub PanelChanged()
-		  If Me.SelectedPanelIndex = 1 Then RefreshSerialPorts // USB
-		End Sub
-	#tag EndEvent
-#tag EndEvents
-#tag Events btAddSerial
-	#tag Event
-		Sub Pressed()
-		  // A node on USB: its client API over the serial port
-		  Dim i As Integer = pmSerialPorts.SelectedRowIndex
-		  If i < 0 Or i > SerialDevice.LastIndex Then
-		    ShakeWindow()
-		    Return
-		  End If
-		  SaveSetupFields
-		  Dim w As New MeshtasticWindow
-		  w.StartSerial(SerialDevice.At(i))
-		  
-		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events btAddNetworkConenction
@@ -1649,6 +1633,22 @@ End
 		Function KeyDown(key As String) As Boolean
 		  If Key = Chr(13) Then Return True
 		End Function
+	#tag EndEvent
+#tag EndEvents
+#tag Events btAddSerial
+	#tag Event
+		Sub Pressed()
+		  // A node on USB: its client API over the serial port
+		  Dim i As Integer = pmSerialPorts.SelectedRowIndex
+		  If i < 0 Or i > SerialDevice.LastIndex Then
+		    ShakeWindow()
+		    Return
+		  End If
+		  SaveSetupFields
+		  Dim w As New MeshtasticWindow
+		  w.StartSerial(SerialDevice.At(i))
+		  
+		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events ShakeTimer

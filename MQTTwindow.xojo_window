@@ -429,7 +429,9 @@ End
 		      senderID = Format(Val(senderID), "0") // all digits: Str() of a Double gives 1.867777e+9
 		    End If
 		    payload = js.Lookup("payload", Nil)
-		    If payload <> Nil Then
+		    // Sensor readings only (environment telemetry): device metrics (battery, voltage...) are neither
+		    // charted, RSSI / SNR included, nor stored, as in the Meshtastic window
+		    If payload <> Nil And payload.HasKey("temperature") Then
 		      temp = payload.Lookup("temperature", -255).DoubleValue
 		      rh = payload.Lookup("relative_humidity", -255).DoubleValue
 		      pa = payload.Lookup("barometric_pressure", -255).DoubleValue
@@ -438,11 +440,7 @@ End
 		      RHChart.Refresh()
 		      HPaChart.Refresh()
 		      SNRSSIchart.Refresh()
-		      // SQLite (and so the export): sensor readings only, as in the Meshtastic window. Device metrics
-		      // (battery, voltage...) still feed the RSSI / SNR chart, but aren't stored
-		      If payload.HasKey("temperature") Then
-		        LogTelemetry(2, fromID, senderID, Str(TS), payload.ToString, rssi, snr, MySessionNum)
-		      End If
+		      LogTelemetry(2, fromID, senderID, Str(TS), payload.ToString, rssi, snr, MySessionNum)
 		    End If
 		  End If
 		  
