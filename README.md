@@ -12,7 +12,7 @@ There are no plugins, no Python and no external tools. The Meshtastic parts use 
 
 ## Screenshots
 
-A Meshtastic node's own BME680, followed over USB. At the top, the latest values; under each chart, min / avg / max. The value under the mouse shows in a box, and samples sit at their real time, so the 6- and 9-minute gaps here keep their width.
+A Meshtastic node's own BME680, followed over its TCP connection. The window opened with the readings stored since the day before (dated labels), and live ones continue from there. At the top, the latest values, and the menu to chart another node with **Request now**; under each chart, min / avg / max. The value under the mouse shows in a box, and samples sit at their real time, so the overnight gap keeps its width.
 
 ![Temperature chart of a Meshtastic node, with the hover box](docs/screenshots/device-temperature.png)
 
