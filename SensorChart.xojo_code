@@ -222,7 +222,7 @@ Inherits DesktopCanvas
 		  lines.Add LabelAt(mHover)
 		  For Each s As SensorSeries In mSeries
 		    If mHover <= s.Values.LastIndex Then
-		      lines.Add s.Label + ":  " + Format(s.Values(mHover), mValueFormat + "0") + s.Suffix
+		      lines.Add s.Label + ":  " + ValueText(s.Values(mHover)) + s.Suffix
 		    End If
 		  Next
 		  g.FontSize = 12
@@ -425,6 +425,18 @@ Inherits DesktopCanvas
 		  // A time axis when there is one time per sample, and they span some time
 		  Dim n As Integer = SeriesLength
 		  Return n >= 2 And mTimes.Count = n And mTimes(n - 1) > mTimes(0)
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Function ValueText(v As Double) As String
+		  // A reading as the hover box shows it: up to 2 decimals, without trailing zeros (28.63, 998.2, 1242)
+		  Dim t As String = Format(v, "-0.00")
+		  While t.EndsWith("0") And t.IndexOf(".") >= 0
+		    t = t.Left(t.Length - 1)
+		  Wend
+		  If t.EndsWith(".") Then t = t.Left(t.Length - 1)
+		  Return t
 		End Function
 	#tag EndMethod
 
