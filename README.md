@@ -151,11 +151,15 @@ SetupWindow.xojo_window         the Data Sources window: source list and the thr
 MQTTwindow.xojo_window          a Meshtastic MQTT feed
 M5AQIwindow.xojo_window         an M5Stack AQI device
 MeshtasticWindow.xojo_window    a Meshtastic node over TCP or USB
-Module1.xojo_code               session, database, event log, exports, settings, AQI parsing
+Module1.xojo_code               desktop side: session folder, exports and their dialogs, settings file, Linux sizes
 SensorChart.xojo_code           the chart control (a DesktopCanvas): time axis, fitted Y axis, gradient, hover values
-SensorSeries.xojo_code          one series of a SensorChart
-ChartLook.xojo_code             colours per quantity, series helpers, min / avg / max
+MapView.xojo_code               the map control (a DesktopCanvas): OpenStreetMap tiles, track, pan and zoom
 App.xojo_code, MainMenuBar.xojo_menu, Build Automation.xojo_code
+Shared/                         the code with no user interface, shared with the Android version:
+  SensorData.xojo_code          database, session, event log, AQI / position / channel-key parsing, CSV and GPX writers
+  ChartLook.xojo_code           colours per quantity, series helpers, min / avg / max, number formatting
+  PositionTrack.xojo_code       the positions of one node (what the Map tab draws)
+  SensorSeries.xojo_code        one series of a SensorChart
 Library/                        MQTT_Xojo's library (MQTT client, protobuf, Meshtastic decoding and
                                 crypto, MeshDeviceLink), a copy of github.com/Kongduino/MQTT_Xojo/Library
 docs/screenshots/               the README's screenshots
@@ -163,6 +167,7 @@ LICENSE                         GPL-3.0
 ```
 
 `Library/` is kept identical to MQTT_Xojo's. Fixes to the library go there first, then are copied here.
+`Shared/` holds no window or control code, so that the Android version can use the same files.
 
 ## Limitations
 

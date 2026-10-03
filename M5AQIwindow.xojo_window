@@ -578,7 +578,7 @@ End
 		    Return
 		  End If
 		  Dim problem As String
-		  If Not ParseAQIResponse(content, Self, problem) Then
+		  If Not ParseAQIResponse(content, Values, updateTime, nickname, periodicity, problem) Then
 		    ReportProblem(problem)
 		    Return
 		  End If

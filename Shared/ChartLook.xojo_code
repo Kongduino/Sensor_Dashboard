@@ -1,6 +1,18 @@
 #tag Module
 Protected Module ChartLook
 	#tag Method, Flags = &h0
+		Function FormatValue(value As Double, mask As String) As String
+		  // Format with a desktop-style mask: "-0.00" (the "-" asks for the sign of a negative number). On Android, Format is
+		  // ICU's DecimalFormat, which writes that "-" literally and adds its own sign (22.3 would show as -22.3, -95 as --95):
+		  // there the "-" is dropped. Everything shared formats signed numbers through here
+		  #If TargetAndroid Then
+		    If mask.BeginsWith("-") Then Return Format(value, mask.Middle(1))
+		  #EndIf
+		  Return Format(value, mask)
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Function BarSet(label As String, kind As String, values() As Double, suffix As String) As SensorSeries
 		  // A bar series (rounded bars from 0); values is the window's own array
 		  Dim s As New SensorSeries
@@ -66,16 +78,6 @@ Protected Module ChartLook
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub StyleChart(c As SensorChart, title As String, valueFormat As String, bars As Boolean = False)
-		  // Clears a chart and sets its title. The look itself is in SensorChart; valueFormat and bars are kept for
-		  // the callers (SensorChart picks the decimals from the axis steps, and each series says whether it is a bar)
-		  c.RemoveAllLabels
-		  c.RemoveAllDatasets
-		  c.Title = title
-		End Sub
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
 		Function LastOf(values() As Double) As Double
 		  // The latest sample, 0 when there are none yet
 		  If values.Count = 0 Then Return 0
@@ -109,8 +111,8 @@ Protected Module ChartLook
 		Function StatsText(name As String, values() As Double, unit As String, fmt As String) As String
 		  // "Temperature: min 24.1 · avg 25.3 · max 26.0 °C" over the samples shown
 		  If values.Count = 0 Then Return name + ": no data yet"
-		  Return name + ":  min " + Format(MinOf(values), fmt) + "  ·  avg " + Format(MeanOf(values), fmt) + _
-		  "  ·  max " + Format(MaxOf(values), fmt) + unit
+		  Return name + ":  min " + FormatValue(MinOf(values), fmt) + "  ·  avg " + FormatValue(MeanOf(values), fmt) + _
+		  "  ·  max " + FormatValue(MaxOf(values), fmt) + unit
 		End Function
 	#tag EndMethod
 
@@ -128,7 +130,7 @@ Protected Module ChartLook
 		  Dim d As New DateTime(ts)
 		  Dim t As String = Format(d.Hour, "00") + ":" + Format(d.Minute, "00")
 		  If withSeconds Then t = t + ":" + Format(d.Second, "00")
-		  Dim today As DateTime = DateTime.Now
+		  Dim today As DateTime = DateTime.Now()
 		  If d.Day <> today.Day Or d.Month <> today.Month Or d.Year <> today.Year Then
 		    t = Format(d.Day, "00") + "/" + Format(d.Month, "00") + " " + t
 		  End If

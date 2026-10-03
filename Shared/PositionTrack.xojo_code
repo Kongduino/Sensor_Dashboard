@@ -67,7 +67,7 @@ Protected Class PositionTrack
 		    rs.Column("altitude").IntegerValue, rs.Column("precisionBits").IntegerValue, rs.Column("sats").IntegerValue, _
 		    RadioValue(rs, "rssi"), RadioValue(rs, "snr"))
 		    n = n + 1
-		    rs.MoveToNextRow
+		    rs.MoveToNextRow()
 		  Wend
 		  Return n
 		End Function
@@ -87,11 +87,11 @@ Protected Class PositionTrack
 		  If Times.Count = 0 Then Return "No position yet"
 		  Dim last As Integer = Times.LastIndex
 		  Dim t As String = Str(Times.Count) + If(Times.Count = 1, " position", " positions") + "  ·  last " + TimeLabel(Times(last), False) + _
-		  "  ·  " + Format(Lats(last), "-0.0000") + ", " + Format(Lons(last), "-0.0000")
+		  "  ·  " + FormatValue(Lats(last), "-0.0000") + ", " + FormatValue(Lons(last), "-0.0000")
 		  If Alts(last) <> 0 Then t = t + "  ·  " + Str(Alts(last)) + " m"
 		  If SatCounts(last) > 0 Then t = t + "  ·  " + Str(SatCounts(last)) + " sats"
 		  If Rssis(last) <> -255 Then t = t + "  ·  RSSI " + Str(Rssis(last)) + " dBm"
-		  If Snrs(last) <> -255 Then t = t + "  ·  SNR " + Format(Snrs(last), "-0.0") + " dB"
+		  If Snrs(last) <> -255 Then t = t + "  ·  SNR " + FormatValue(Snrs(last), "-0.0") + " dB"
 		  If Precisions(last) > 0 And Precisions(last) < 32 Then t = t + "  ·  approximate (" + Str(Precisions(last)) + " bits)"
 		  Return t
 		End Function
