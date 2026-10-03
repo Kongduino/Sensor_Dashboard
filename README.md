@@ -21,7 +21,7 @@ A Meshtastic node's own BME680, followed over its TCP connection. The window ope
   <img src="docs/screenshots/device-pressure.png" alt="Pressure chart" width="49%">
 </p>
 
-The same node followed over MQTT, through the broker its gateway uploads to, with a reading every 5 minutes:
+The same node followed over MQTT, through the broker its gateway uploads to, with **Node** set to it. These are readings stored the day before, loaded when the window opened: the time axis shows the afternoon gap between the first readings and the later ones taken every 5 minutes.
 
 ![Temperature chart of an MQTT feed](docs/screenshots/mqtt-temperature.png)
 
