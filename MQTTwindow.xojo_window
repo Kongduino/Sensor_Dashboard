@@ -571,8 +571,11 @@ End
 		  If ts <= mLastPositionTime Then Return // already stored
 		  mLastPositionTime = ts
 		  Dim gatewayNum As Int64 = Val("&H" + mFeedID)
-		  LogPosition(fromNum, gatewayNum, ts, lat, lon, alt, precision, sats)
-		  Track.Add(ts, lat, lon, alt, precision, sats)
+		  // The radio values of this packet as the gateway / connected node received it (none for its own)
+		  Dim rssi As Integer = js.Lookup("rssi", -255).IntegerValue
+		  Dim snr As Double = js.Lookup("snr", -255).DoubleValue
+		  LogPosition(fromNum, gatewayNum, ts, lat, lon, alt, precision, sats, rssi, snr)
+		  Track.Add(ts, lat, lon, alt, precision, sats, rssi, snr)
 		  LogEvents "MQTTwindow", "Position: " + Track.Summary
 		  UpdateMap
 		End Sub

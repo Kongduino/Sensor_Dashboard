@@ -665,14 +665,17 @@ End
 		  Dim lat, lon As Double
 		  If Not ParsePosition(js, ts, lat, lon, alt, precision, sats) Then Return // no fix
 		  Dim fromNum As UInt32 = js.Lookup("from", 0).UInt64Value
+		  // The radio values of this packet as the gateway / connected node received it (none for its own)
+		  Dim rssi As Integer = js.Lookup("rssi", -255).IntegerValue
+		  Dim snr As Double = js.Lookup("snr", -255).DoubleValue
 		  If mLastStoredPos = Nil Then mLastStoredPos = New Dictionary
 		  Dim key As String = Str(fromNum)
 		  If ts > mLastStoredPos.Lookup(key, 0).IntegerValue Then
 		    mLastStoredPos.Value(key) = ts
-		    LogPosition(fromNum, mMyNum, ts, lat, lon, alt, precision, sats)
+		    LogPosition(fromNum, mMyNum, ts, lat, lon, alt, precision, sats, rssi, snr)
 		  End If
 		  If fromNum = mChartNode Then
-		    Track.Add(ts, lat, lon, alt, precision, sats)
+		    Track.Add(ts, lat, lon, alt, precision, sats, rssi, snr)
 		    LogSource("Position of " + NodeLabel(fromNum) + ": " + Track.Summary)
 		    UpdateMap
 		    If mRequested = fromNum And mRequestedPosition Then

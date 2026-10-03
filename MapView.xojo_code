@@ -256,6 +256,10 @@ Inherits DesktopCanvas
 		  If Track.SatCounts(i) > 0 Then extra = extra + If(extra = "", "", "  ·  ") + Str(Track.SatCounts(i)) + " sats"
 		  If Track.Precisions(i) > 0 And Track.Precisions(i) < 32 Then extra = extra + If(extra = "", "", "  ·  ") + "approximate"
 		  If extra <> "" Then lines.Add extra
+		  Dim radio As String
+		  If Track.Rssis(i) <> -255 Then radio = "RSSI " + Str(Track.Rssis(i)) + " dBm"
+		  If Track.Snrs(i) <> -255 Then radio = radio + If(radio = "", "", "  ·  ") + "SNR " + Format(Track.Snrs(i), "-0.0") + " dB"
+		  If radio <> "" Then lines.Add radio
 		  g.FontSize = 12
 		  Dim boxWidth As Double
 		  For Each t As String In lines

@@ -174,7 +174,14 @@ Protected Module Module1
 		  // GPS positions of Meshtastic nodes (MQTT feeds and devices), for the Map tabs
 		  MySensordb.ExecuteSQL("CREATE TABLE IF NOT EXISTS positions(posID INTEGER PRIMARY KEY, sessionID INTEGER, " + _
 		  "timestamp INTEGER, fromID INTEGER, senderID INTEGER, latitude REAL, longitude REAL, altitude INTEGER, " + _
-		  "precisionBits INTEGER, sats INTEGER);")
+		  "precisionBits INTEGER, sats INTEGER, rssi INTEGER, snr REAL);")
+		  // rssi / snr came later: added to a table created before them (an error just means they are there)
+		  For Each col As String In Array("rssi INTEGER", "snr REAL")
+		    Try
+		      MySensordb.ExecuteSQL("ALTER TABLE positions ADD COLUMN " + col + ";")
+		    Catch eCol As DatabaseException
+		    End Try
+		  Next
 		  
 		  Dim dt As DateTime = DateTime.Now()
 		  Dim cmd As String
@@ -581,11 +588,13 @@ Protected Module Module1
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub LogPosition(fromID As Int64, senderID As Int64, ts As Integer, lat As Double, lon As Double, alt As Integer, precision As Integer, sats As Integer)
-		  // One position in the positions table (fromID: the node, senderID: the gateway or connected node)
-		  Dim cmd As String = "INSERT INTO positions(sessionID, timestamp, fromID, senderID, latitude, longitude, altitude, precisionBits, sats) VALUES (" + _
+		Sub LogPosition(fromID As Int64, senderID As Int64, ts As Integer, lat As Double, lon As Double, alt As Integer, precision As Integer, sats As Integer, rssi As Integer = -255, snr As Double = -255)
+		  // One position in the positions table (fromID: the node, senderID: the gateway or connected node;
+		  // rssi / snr as the gateway or connected node received it, -255 when unknown, e.g. its own packets)
+		  Dim cmd As String = "INSERT INTO positions(sessionID, timestamp, fromID, senderID, latitude, longitude, altitude, precisionBits, sats, rssi, snr) VALUES (" + _
 		  Str(MySessionNum) + ", " + Str(ts) + ", " + Format(fromID, "0") + ", " + Format(senderID, "0") + ", " + _
-		  Format(lat, "-0.0000000") + ", " + Format(lon, "-0.0000000") + ", " + Str(alt) + ", " + Str(precision) + ", " + Str(sats) + ");"
+		  Format(lat, "-0.0000000") + ", " + Format(lon, "-0.0000000") + ", " + Str(alt) + ", " + Str(precision) + ", " + Str(sats) + ", " + _
+		  Str(rssi) + ", " + Format(snr, "-0.00") + ");"
 		  LogEvents "LogPosition", cmd
 		  Try
 		    MySensordb.ExecuteSQL(cmd)
@@ -623,7 +632,7 @@ Protected Module Module1
 		Function PositionRows(fromID As Int64) As RowSet
 		  // The node's latest stored positions (every session, at most PositionTrack.kMaxPositions), oldest first;
 		  // a position stored twice (the same time) comes once
-		  Dim cmd As String = "select * from (select timestamp, latitude, longitude, altitude, precisionBits, sats from positions " + _
+		  Dim cmd As String = "select * from (select timestamp, latitude, longitude, altitude, precisionBits, sats, rssi, snr from positions " + _
 		  "where fromID=" + Format(fromID, "0") + " group by timestamp order by timestamp desc limit 500) order by timestamp;"
 		  Try
 		    Return MySensordb.SelectSQL(cmd)
@@ -643,7 +652,7 @@ Protected Module Module1
 		    Dim f As FolderItem = fg.Child(prefix + "_positions.csv")
 		    If f.Exists Then f.Remove
 		    Dim tos As TextOutputStream = TextOutputStream.Create(f)
-		    tos.WriteLine "timestamp;latitude;longitude;altitude;precision_bits;sats"
+		    tos.WriteLine "timestamp;latitude;longitude;altitude;precision_bits;sats;rssi;snr"
 		    For i As Integer = 0 To track.Count - 1
 		      t.RemoveAll
 		      Dim dt As New DateTime(track.Times(i))
@@ -653,6 +662,8 @@ Protected Module Module1
 		      t.Add Str(track.Alts(i))
 		      t.Add Str(track.Precisions(i))
 		      t.Add Str(track.SatCounts(i))
+		      t.Add If(track.Rssis(i) = -255, "", Str(track.Rssis(i)))
+		      t.Add If(track.Snrs(i) = -255, "", Format(track.Snrs(i), "-0.00"))
 		      tos.WriteLine Join(t, ";")
 		    Next
 		    tos.Close

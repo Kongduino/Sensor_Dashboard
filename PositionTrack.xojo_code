@@ -3,12 +3,12 @@ Protected Class PositionTrack
 	#tag Note, Name = About
 		The positions of one node, in time order: what the Map tab draws. Parallel arrays: Times (seconds),
 		Lats / Lons (degrees), Alts (m, 0 if unknown), Precisions (precision_bits: 32 exact, less = rounded on
-		purpose), SatCounts (0 if unknown).
+		purpose), SatCounts (0 if unknown), Rssis (dBm) and Snrs (dB) as received (-255 if unknown).
 	#tag EndNote
 
 
 	#tag Method, Flags = &h0
-		Sub Add(ts As Integer, lat As Double, lon As Double, alt As Integer, precision As Integer, sats As Integer)
+		Sub Add(ts As Integer, lat As Double, lon As Double, alt As Integer, precision As Integer, sats As Integer, rssi As Integer = -255, snr As Double = -255)
 		  // One position, kept in time order; a position with the same time as one already held is ignored.
 		  // Only the latest kMaxPositions are kept
 		  Dim i As Integer = Times.Count
@@ -22,6 +22,8 @@ Protected Class PositionTrack
 		  Alts.AddAt(i, alt)
 		  Precisions.AddAt(i, precision)
 		  SatCounts.AddAt(i, sats)
+		  Rssis.AddAt(i, rssi)
+		  Snrs.AddAt(i, snr)
 		  While Times.Count > kMaxPositions
 		    Times.RemoveAt(0)
 		    Lats.RemoveAt(0)
@@ -29,6 +31,8 @@ Protected Class PositionTrack
 		    Alts.RemoveAt(0)
 		    Precisions.RemoveAt(0)
 		    SatCounts.RemoveAt(0)
+		    Rssis.RemoveAt(0)
+		    Snrs.RemoveAt(0)
 		  Wend
 		End Sub
 	#tag EndMethod
@@ -41,6 +45,8 @@ Protected Class PositionTrack
 		  Alts.RemoveAll
 		  Precisions.RemoveAll
 		  SatCounts.RemoveAll
+		  Rssis.RemoveAll
+		  Snrs.RemoveAll
 		End Sub
 	#tag EndMethod
 
@@ -58,11 +64,20 @@ Protected Class PositionTrack
 		  Dim n As Integer
 		  While Not rs.AfterLastRow
 		    Add(rs.Column("timestamp").IntegerValue, rs.Column("latitude").DoubleValue, rs.Column("longitude").DoubleValue, _
-		    rs.Column("altitude").IntegerValue, rs.Column("precisionBits").IntegerValue, rs.Column("sats").IntegerValue)
+		    rs.Column("altitude").IntegerValue, rs.Column("precisionBits").IntegerValue, rs.Column("sats").IntegerValue, _
+		    RadioValue(rs, "rssi"), RadioValue(rs, "snr"))
 		    n = n + 1
 		    rs.MoveToNextRow
 		  Wend
 		  Return n
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Function RadioValue(rs As RowSet, column As String) As Double
+		  // rssi / snr of a stored position: -255 when unknown (NULL in rows stored before these columns existed)
+		  If rs.Column(column).Value.IsNull Then Return -255
+		  Return rs.Column(column).DoubleValue
 		End Function
 	#tag EndMethod
 
@@ -75,6 +90,8 @@ Protected Class PositionTrack
 		  "  ·  " + Format(Lats(last), "-0.0000") + ", " + Format(Lons(last), "-0.0000")
 		  If Alts(last) <> 0 Then t = t + "  ·  " + Str(Alts(last)) + " m"
 		  If SatCounts(last) > 0 Then t = t + "  ·  " + Str(SatCounts(last)) + " sats"
+		  If Rssis(last) <> -255 Then t = t + "  ·  RSSI " + Str(Rssis(last)) + " dBm"
+		  If Snrs(last) <> -255 Then t = t + "  ·  SNR " + Format(Snrs(last), "-0.0") + " dB"
 		  If Precisions(last) > 0 And Precisions(last) < 32 Then t = t + "  ·  approximate (" + Str(Precisions(last)) + " bits)"
 		  Return t
 		End Function
@@ -98,7 +115,15 @@ Protected Class PositionTrack
 	#tag EndProperty
 
 	#tag Property, Flags = &h0
+		Rssis() As Integer
+	#tag EndProperty
+
+	#tag Property, Flags = &h0
 		SatCounts() As Integer
+	#tag EndProperty
+
+	#tag Property, Flags = &h0
+		Snrs() As Double
 	#tag EndProperty
 
 	#tag Property, Flags = &h0
