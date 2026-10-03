@@ -1,6 +1,34 @@
 #tag Module
 Protected Module ChartLook
 	#tag Method, Flags = &h0
+		Sub SetTextSize(g As Graphics, size As Double, bold As Boolean)
+		  // Text size and weight for the drawing code shared with Android: Graphics.FontSize and Bold on desktop; on
+		  // Android, Graphics has no FontSize and its text goes through a Font
+		  #If TargetAndroid Then
+		    If bold Then
+		      g.Font = Font.BoldSystemFont(size)
+		    Else
+		      g.Font = Font.SystemFont(size)
+		    End If
+		  #Else
+		    g.FontSize = size
+		    g.Bold = bold
+		  #EndIf
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function TextAscent(g As Graphics) As Double
+		  // The ascent of the current text (to place text by its baseline): Graphics.FontAscent on desktop, Font.Ascent on Android
+		  #If TargetAndroid Then
+		    Return g.Font.Ascent
+		  #Else
+		    Return g.FontAscent
+		  #EndIf
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Function FormatValue(value As Double, mask As String) As String
 		  // Format with a desktop-style mask: "-0.00" (the "-" asks for the sign of a negative number). On Android, Format is
 		  // ICU's DecimalFormat, which writes that "-" literally and adds its own sign (22.3 would show as -22.3, -95 as --95):

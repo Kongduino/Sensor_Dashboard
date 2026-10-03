@@ -722,6 +722,10 @@ End
 		  laAverageRH.Text = ""
 		  laAverageHPa.Text = ""
 		  laLatest.Text = "Waiting for a reading…"
+		  // The titles carry the sample count: reset too, or they keep the previous node's count
+		  TempChart.Title = "Temperature  (" + SampleCount(0) + ")"
+		  RHChart.Title = "Humidity  (" + SampleCount(0) + ")"
+		  HPaChart.Title = "Pressure  (" + SampleCount(0) + ")"
 		  TempChart.Refresh()
 		  RHChart.Refresh()
 		  HPaChart.Refresh()
