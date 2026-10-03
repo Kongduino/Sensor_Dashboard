@@ -1100,6 +1100,7 @@ End
 		  If mMenuNodes(Me.SelectedRowIndex) = mChartNode Then Return
 		  mChartNode = mMenuNodes(Me.SelectedRowIndex)
 		  mRequested = 0
+		  PositionMap.FitView // another node: its whole track
 		  ClearCharts
 		  LoadHistory
 		  SetStatus("connected") // the title adds "charting <node>"

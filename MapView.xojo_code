@@ -43,6 +43,149 @@ Inherits DesktopCanvas
 	#tag EndEvent
 
 
+	#tag Event
+		Sub DoublePressed(x As Integer, y As Integer)
+		  // Zoom in at that point
+		  If Not InControls(x, y) Then ZoomAt(x, y, 1)
+		End Sub
+	#tag EndEvent
+
+	#tag Event
+		Function MouseDown(x As Integer, y As Integer) As Boolean
+		  // The + / − / Fit buttons, or the start of a drag
+		  If PlusRect.Contains(New Point(x, y)) Then
+		    ZoomAt(Width / 2, Height / 2, 1)
+		    Return True
+		  End If
+		  If MinusRect.Contains(New Point(x, y)) Then
+		    ZoomAt(Width / 2, Height / 2, -1)
+		    Return True
+		  End If
+		  If mManual And FitRect.Contains(New Point(x, y)) Then
+		    FitView
+		    Return True
+		  End If
+		  mDragging = True
+		  mDragX = x
+		  mDragY = y
+		  mDragOriginX = mOriginX
+		  mDragOriginY = mOriginY
+		  Return True
+		End Function
+	#tag EndEvent
+
+	#tag Event
+		Sub MouseDrag(x As Integer, y As Integer)
+		  // Panning: the map follows the mouse
+		  If Not mDragging Then Return
+		  If Abs(x - mDragX) + Abs(y - mDragY) < 3 And Not mManual Then Return // a click, not a drag
+		  mManual = True
+		  Me.MouseCursor = System.Cursors.HandClosed
+		  mOriginX = mDragOriginX - (x - mDragX)
+		  mOriginY = mDragOriginY - (y - mDragY)
+		  mHover = -1
+		  Refresh(False)
+		End Sub
+	#tag EndEvent
+
+	#tag Event
+		Sub MouseUp(x As Integer, y As Integer)
+		  mDragging = False
+		  Me.MouseCursor = System.Cursors.StandardPointer
+		End Sub
+	#tag EndEvent
+
+	#tag Event
+		Function MouseWheel(x As Integer, y As Integer, deltaX As Integer, deltaY As Integer) As Boolean
+		  // Scrolling (wheel or two fingers) zooms around the pointer; small trackpad steps add up first
+		  mWheel = mWheel + deltaY
+		  If mWheel <= -3 Then
+		    mWheel = 0
+		    ZoomAt(x, y, 1)
+		  ElseIf mWheel >= 3 Then
+		    mWheel = 0
+		    ZoomAt(x, y, -1)
+		  End If
+		  Return True
+		End Function
+	#tag EndEvent
+
+
+	#tag Method, Flags = &h21
+		Private Sub DrawButton(g As Graphics, r As Rect, caption As String)
+		  g.DrawingColor = Color.RGB(255, 255, 255, 25)
+		  g.FillRoundRectangle(r.Left, r.Top, r.Width, r.Height, 8, 8)
+		  g.DrawingColor = &cADB5BD
+		  g.DrawRoundRectangle(r.Left, r.Top, r.Width, r.Height, 8, 8)
+		  g.DrawingColor = &c212529
+		  g.DrawText(caption, r.Left + (r.Width - g.TextWidth(caption)) / 2, r.Top + (r.Height + g.FontAscent) / 2 - 2)
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Sub DrawControls(g As Graphics)
+		  // + and − at the top left, and Fit below them once the view was moved or zoomed by hand
+		  g.Bold = True
+		  g.FontSize = 16
+		  DrawButton(g, PlusRect, "+")
+		  DrawButton(g, MinusRect, "−")
+		  g.FontSize = 12
+		  If mManual Then DrawButton(g, FitRect, "Fit")
+		  g.Bold = False
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Function FitRect() As Rect
+		  Return New Rect(10, 78, 32, 26)
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Sub FitView()
+		  // Back to the automatic view: every position, with a margin (also when another node is shown)
+		  mManual = False
+		  mHover = -1
+		  Refresh(False)
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Function InControls(x As Integer, y As Integer) As Boolean
+		  Dim pt As New Point(x, y)
+		  Return PlusRect.Contains(pt) Or MinusRect.Contains(pt) Or (mManual And FitRect.Contains(pt))
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Function MinusRect() As Rect
+		  Return New Rect(10, 44, 32, 30)
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Function PlusRect() As Rect
+		  Return New Rect(10, 10, 32, 30)
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Sub ZoomAt(x As Double, y As Double, steps As Integer)
+		  // One zoom level in (+1) or out (−1), keeping the point under (x, y) in place
+		  Dim newZoom As Integer = Max(kMinZoom, Min(kTopZoom, mZoom + steps))
+		  If newZoom = mZoom Then Return
+		  Dim factor As Double = 2 ^ (newZoom - mZoom)
+		  Dim pointX As Double = (mOriginX + x) * factor
+		  Dim pointY As Double = (mOriginY + y) * factor
+		  mZoom = newZoom
+		  mOriginX = pointX - x
+		  mOriginY = pointY - y
+		  mManual = True
+		  mHover = -1
+		  Refresh(False)
+		End Sub
+	#tag EndMethod
+
 	#tag Method, Flags = &h21
 		Private Function CacheFile(key As String, create As Boolean) As FolderItem
 		  // tiles/<z>/<x>/<y>.png in the application data folder (next to settings.json and the database)
@@ -141,7 +284,7 @@ Inherits DesktopCanvas
 		  g.AntiAliased = True
 		  g.DrawingColor = &cE9ECEF
 		  g.FillRectangle(0, 0, w, h)
-		  ComputeView(w, h)
+		  If Not mManual Then ComputeView(w, h) // moved or zoomed by hand: the view stays until Fit
 		  
 		  // Tiles: those not cached yet are fetched in the background and drawn when they arrive
 		  Dim n As Integer = 2 ^ mZoom
@@ -149,10 +292,12 @@ Inherits DesktopCanvas
 		  Dim lastX As Integer = Floor((mOriginX + w) / 256)
 		  Dim firstY As Integer = Floor(mOriginY / 256)
 		  Dim lastY As Integer = Floor((mOriginY + h) / 256)
+		  Dim visibleTiles As New Dictionary
 		  For ty As Integer = firstY To lastY
 		    If ty < 0 Or ty >= n Then Continue
 		    For tx As Integer = firstX To lastX
 		      Dim wrapped As Integer = ((tx Mod n) + n) Mod n
+		      visibleTiles.Value(Str(mZoom) + "/" + Str(wrapped) + "/" + Str(ty)) = True
 		      Dim p As Picture = TileFor(mZoom, wrapped, ty)
 		      Dim sx As Double = tx * 256 - mOriginX
 		      Dim sy As Double = ty * 256 - mOriginY
@@ -163,6 +308,10 @@ Inherits DesktopCanvas
 		        g.DrawRectangle(sx, sy, 256, 256)
 		      End If
 		    Next
+		  Next
+		  // Tiles that scrolled out of view aren't downloaded any more (panning and zooming)
+		  For q As Integer = mQueue.LastIndex DownTo 0
+		    If Not visibleTiles.HasKey(mQueue(q)) Then mQueue.RemoveAt(q)
 		  Next
 		  
 		  If Track = Nil Or Track.Count = 0 Then
@@ -217,6 +366,7 @@ Inherits DesktopCanvas
 		  g.DrawText(credit, w - cw + 5, h - 4)
 		  
 		  If mHover >= 0 And Track <> Nil And mHover < Track.Count Then DrawHover(g, w)
+		  If Not mExporting Then DrawControls(g)
 		End Sub
 	#tag EndMethod
 
@@ -349,7 +499,9 @@ Inherits DesktopCanvas
 		  p.Graphics.ScaleY = 2
 		  Dim saved As Integer = mHover
 		  mHover = -1
+		  mExporting = True // no buttons in the picture
 		  DrawMap(p.Graphics, Width, Height)
+		  mExporting = False
 		  mHover = saved
 		  Return p
 		End Function
@@ -377,6 +529,38 @@ Inherits DesktopCanvas
 
 	#tag Property, Flags = &h21
 		Private mBusy As Boolean
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mDragOriginX As Double
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mDragOriginY As Double
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mDragX As Integer
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mDragY As Integer
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mDragging As Boolean
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mExporting As Boolean
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mManual As Boolean
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mWheel As Integer
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
@@ -415,6 +599,12 @@ Inherits DesktopCanvas
 		Private mZoom As Integer
 	#tag EndProperty
 
+
+	#tag Constant, Name = kMinZoom, Type = Double, Dynamic = False, Default = \"2", Scope = Private
+	#tag EndConstant
+
+	#tag Constant, Name = kTopZoom, Type = Double, Dynamic = False, Default = \"19", Scope = Private
+	#tag EndConstant
 
 	#tag Constant, Name = kMaxZoom, Type = Double, Dynamic = False, Default = \"18", Scope = Private
 	#tag EndConstant
