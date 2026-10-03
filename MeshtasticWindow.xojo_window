@@ -56,7 +56,49 @@ Begin DesktopWindow MeshtasticWindow
       Transparent     =   False
       Underline       =   False
       Visible         =   True
-      Width           =   420
+      Width           =   340
+   End
+   Begin DesktopTextField tfNodeFilter
+      AllowAutoDeactivate=   True
+      AllowFocusRing  =   True
+      AllowSpellChecking=   False
+      AllowTabs       =   False
+      BackgroundColor =   &cFFFFFF
+      Bold            =   False
+      Enabled         =   True
+      FontName        =   "System"
+      FontSize        =   0.0
+      FontUnit        =   0
+      Format          =   ""
+      HasBorder       =   True
+      Height          =   22
+      Hint            =   "Filter nodes"
+      Index           =   -2147483648
+      InitialParent   =   ""
+      Italic          =   False
+      Left            =   368
+      LockBottom      =   False
+      LockedInPosition=   False
+      LockLeft        =   False
+      LockRight       =   True
+      LockTop         =   True
+      MaximumCharactersAllowed=   0
+      Password        =   False
+      ReadOnly        =   False
+      Scope           =   0
+      TabIndex        =   4
+      TabPanelIndex   =   0
+      TabStop         =   True
+      Text            =   ""
+      TextAlignment   =   0
+      TextColor       =   &c000000
+      Tooltip         =   "Shows only the nodes whose name, short name or id contain this text (e.g. 6870 or !e771)"
+      Top             =   12
+      Transparent     =   False
+      Underline       =   False
+      ValidationMask  =   ""
+      Visible         =   True
+      Width           =   110
    End
    Begin DesktopPopupMenu pmChartNode
       AllowAutoDeactivate=   True
@@ -70,7 +112,7 @@ Begin DesktopWindow MeshtasticWindow
       InitialParent   =   ""
       InitialValue    =   ""
       Italic          =   False
-      Left            =   450
+      Left            =   484
       LockBottom      =   False
       LockedInPosition=   False
       LockLeft        =   False
@@ -86,7 +128,7 @@ Begin DesktopWindow MeshtasticWindow
       Transparent     =   False
       Underline       =   False
       Visible         =   True
-      Width           =   250
+      Width           =   216
    End
    Begin DesktopButton btRequest
       AllowAutoDeactivate=   True
@@ -519,6 +561,34 @@ End
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
+		Private Sub ApplyNodeFilter()
+		  // The node menu: "Own sensor" first, then the nodes matching the filter field (name, short name or id,
+		  // ignoring case). The charted node stays in the menu even when it doesn't match, so the selection holds
+		  Dim filter As String = tfNodeFilter.Text.Trim.Lowercase
+		  mMenuNodes.RemoveAll
+		  mSuppressMenu = True
+		  pmChartNode.RemoveAllRows
+		  pmChartNode.AddRow "Own sensor: " + Owner
+		  mMenuNodes.Add mMyNum
+		  Dim shown As Integer
+		  For i As Integer = 0 To mAllNodeNums.LastIndex
+		    If filter = "" Or mAllNodeSearch(i).IndexOf(filter) >= 0 Or mAllNodeNums(i) = mChartNode Then
+		      pmChartNode.AddRow mAllNodeLabels(i)
+		      mMenuNodes.Add mAllNodeNums(i)
+		      If filter = "" Or mAllNodeSearch(i).IndexOf(filter) >= 0 Then shown = shown + 1
+		    End If
+		  Next
+		  pmChartNode.SelectedRowIndex = Max(0, mMenuNodes.IndexOf(mChartNode))
+		  mSuppressMenu = False
+		  If filter = "" Then
+		    pmChartNode.Tooltip = Str(mAllNodeNums.Count) + " nodes known by the connected node"
+		  Else
+		    pmChartNode.Tooltip = Str(shown) + " of " + Str(mAllNodeNums.Count) + " nodes match """ + tfNodeFilter.Text.Trim + """"
+		  End If
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
 		Private Sub ClearCharts()
 		  // Empties the sample arrays in place (the charts hold references to them)
 		  dhtLabels.RemoveAll
@@ -530,7 +600,7 @@ End
 		  laAverageTemp.Text = ""
 		  laAverageRH.Text = ""
 		  laAverageHPa.Text = ""
-		  laLatest.Text = NodeLabel(mChartNode) + ": waiting for a reading…"
+		  laLatest.Text = "Waiting for a reading…"
 		  TempChart.Refresh()
 		  RHChart.Refresh()
 		  HPaChart.Refresh()
@@ -539,30 +609,29 @@ End
 
 	#tag Method, Flags = &h21
 		Private Sub FillNodeMenu(link As MeshDeviceLink)
-		  // The connected node first (its own sensor), then the other nodes it knows, by name
-		  Dim names() As String
+		  // Every node the connected node knows, by name (the menu itself is built by ApplyNodeFilter)
+		  Dim keys() As String
 		  Dim nums() As UInt32
+		  Dim labels() As String
+		  Dim search() As String
 		  For i As Integer = 0 To link.NodeCount - 1
 		    If link.NodeNumAt(i) <> mMyNum Then
 		      Dim nm As String = link.NodeLongNameAt(i)
 		      If nm = "" Then nm = link.NodeShortNameAt(i)
-		      names.Add nm.Lowercase + Chr(1) + nm
+		      Dim h As String = "00000000" + Hex(link.NodeNumAt(i))
+		      Dim id As String = "!" + h.RightBytes(8).Lowercase
+		      keys.Add nm.Lowercase
 		      nums.Add link.NodeNumAt(i)
+		      labels.Add nm + "  (" + id + ")"
+		      Dim searchText As String = nm + " " + link.NodeShortNameAt(i) + " " + id
+		      search.Add searchText.Lowercase
 		    End If
 		  Next
-		  names.SortWith(nums)
-		  mMenuNodes.RemoveAll
-		  mSuppressMenu = True
-		  pmChartNode.RemoveAllRows
-		  pmChartNode.AddRow "Own sensor: " + Owner
-		  mMenuNodes.Add mMyNum
-		  For i As Integer = 0 To nums.LastIndex
-		    Dim h As String = "00000000" + Hex(nums(i))
-		    pmChartNode.AddRow names(i).NthField(Chr(1), 2) + "  (!" + h.RightBytes(8).Lowercase + ")"
-		    mMenuNodes.Add nums(i)
-		  Next
-		  pmChartNode.SelectedRowIndex = Max(0, mMenuNodes.IndexOf(mChartNode))
-		  mSuppressMenu = False
+		  keys.SortWith(nums, labels, search)
+		  mAllNodeNums = nums
+		  mAllNodeLabels = labels
+		  mAllNodeSearch = search
+		  ApplyNodeFilter
 		End Sub
 	#tag EndMethod
 
@@ -630,7 +699,8 @@ End
 
 	#tag Method, Flags = &h21
 		Private Sub SetStatus(status As String)
-		  Self.Title = "Node """ + Owner + """ (" + NodeID + ") via " + mSourceName + " - " + status
+		  Self.Title = "Node """ + Owner + """ (" + NodeID + ") via " + mSourceName + " - " + status + _
+		  If(mChartNode <> 0 And mChartNode <> mMyNum, "  ·  charting " + NodeLabel(mChartNode), "")
 		End Sub
 	#tag EndMethod
 
@@ -752,7 +822,7 @@ End
 		  
 		  // The latest values at a glance
 		  If myTemp.Count > 0 Then
-		    laLatest.Text = If(mChartNode <> mMyNum, NodeLabel(mChartNode) + "   ", "") + Format(LastOf(myTemp), "-0.0") + " °C   ·   " + Format(LastOf(myRH), "0.0") + " %   ·   " + _
+		    laLatest.Text = Format(LastOf(myTemp), "-0.0") + " °C   ·   " + Format(LastOf(myRH), "0.0") + " %   ·   " + _
 		    Format(LastOf(myPA), "0.0") + " hPa      " + tsmp
 		  End If
 		End Sub
@@ -832,6 +902,18 @@ End
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
+		Private mAllNodeLabels() As String
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mAllNodeNums() As UInt32
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mAllNodeSearch() As String
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
 		Private mChartNode As UInt32
 	#tag EndProperty
 
@@ -866,6 +948,14 @@ End
 
 #tag EndWindowCode
 
+#tag Events tfNodeFilter
+	#tag Event
+		Sub TextChanged()
+		  // Narrows the node menu as you type
+		  ApplyNodeFilter
+		End Sub
+	#tag EndEvent
+#tag EndEvents
 #tag Events pmChartNode
 	#tag Event
 		Sub SelectionChanged(item As DesktopMenuItem)
