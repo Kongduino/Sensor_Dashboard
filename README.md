@@ -122,6 +122,7 @@ Only one window per node: a node has a single queue towards its clients, so two 
 | MQTT | `MQTT_<gateway>.csv`, `MQTT_<gateway>_Temperature.png`, `_Humidity.png`, `_Pressure.png`, `_RSSISNR.png` |
 | M5Stack AQI | `AQI_<device>.csv`, `AQI_<device>_Temperature.png`, `_Humidity.png`, `_CO2.png`, `_VOC.png`, `_PM.png` |
 | Meshtastic device | `DEV_<node>.csv`, `DEV_<node>_Temperature.png`, `_Humidity.png`, `_Pressure.png` |
+| Positions (MQTT and device, when the node has any) | `<prefix>_positions.csv` (timestamp, latitude, longitude, altitude, precision_bits, sats), `<prefix>_positions.gpx` (a GPX 1.1 track for mapping apps) and `<prefix>_Map.png`, with the prefix of the source (`MQTT_<gateway>`, `MQTT_<node>_via_<gateway>` or `DEV_<node>`). They cover the whole track shown on the Map tab, earlier sessions included |
 
 All three exports write the same kind of CSV: `;` as separator, one row per reading, oldest first, and these columns:
 

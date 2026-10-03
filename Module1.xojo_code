@@ -23,18 +23,27 @@ Protected Module Module1
 		  Dim cmd As String = "select * from telemetry where sessionID=" + Str(MySessionNum) + cond + " ORDER BY timestamp;"
 		  LogEvents "ExportMQTT", cmd
 		  Dim rs As RowSet = MySensordb.SelectSQL(cmd)
-		  If rs.RowCount = 0 Then
+		  If rs.RowCount = 0 And w.Track.Count = 0 Then
 		    LogEvents "ExportMQTT", "Nothing to export yet for " + "!" + w.FeedID
-		    MessageBox "Nothing to export yet for " + "!" + w.FeedID + ": no telemetry received in this session."
+		    MessageBox "Nothing to export yet for " + "!" + w.FeedID + ": no telemetry or position received in this session."
 		    Return
 		  End If
 		  
 		  Dim fg As New FolderItem("Session_" + MySessionID)
 		  If Not fg.Exists Then fg.CreateFolder()
+		  Dim written() As String
+		  If w.Track.Count > 0 Then
+		    ExportPositions(w.Track, w.PositionMap, fg, "MQTT_" + fileName)
+		    written.Add "MQTT_" + fileName + "_positions.csv / .gpx / _Map.png"
+		  End If
+		  If rs.RowCount = 0 Then
+		    ReportExport(fg, written)
+		    Return
+		  End If
 		  Dim fi As FolderItem = fg.Child("MQTT_" + fileName + ".csv")
 		  WriteTelemetryCSV(rs, fi, "node", True)
-		  LogEvents "ExportMQTT", "Exported successfuly file " + fi.NativePath
-		  MessageBox "Exported successfuly file " + fi.NativePath
+		  written.AddAt(0, fi.Name + " and the chart images")
+		  ReportExport(fg, written)
 		  
 		  Dim p As Picture
 		  p = w.TempChart.ToPicture
@@ -374,18 +383,27 @@ Protected Module Module1
 		  " AND logType=3 AND fromID=" + Format(Val("&H" + w.FeedID), "0") + " ORDER BY timestamp;"
 		  LogEvents "ExportDevice", cmd
 		  Dim rs As RowSet = MySensordb.SelectSQL(cmd)
-		  If rs.RowCount = 0 Then
+		  If rs.RowCount = 0 And w.Track.Count = 0 Then
 		    LogEvents "ExportDevice", "Nothing to export yet for " + "!" + w.FeedID
-		    MessageBox "Nothing to export yet for " + "!" + w.FeedID + ": no sensor reading received in this session."
+		    MessageBox "Nothing to export yet for " + "!" + w.FeedID + ": no sensor reading or position received in this session."
 		    Return
 		  End If
 		  
 		  Dim fg As New FolderItem("Session_" + MySessionID)
 		  If Not fg.Exists Then fg.CreateFolder()
+		  Dim written() As String
+		  If w.Track.Count > 0 Then
+		    ExportPositions(w.Track, w.PositionMap, fg, "DEV_" + w.FeedID)
+		    written.Add "DEV_" + w.FeedID + "_positions.csv / .gpx / _Map.png"
+		  End If
+		  If rs.RowCount = 0 Then
+		    ReportExport(fg, written)
+		    Return
+		  End If
 		  Dim fi As FolderItem = fg.Child("DEV_" + w.FeedID + ".csv")
 		  WriteTelemetryCSV(rs, fi, "node", False)
-		  LogEvents "ExportDevice", "Exported successfuly file " + fi.NativePath
-		  MessageBox "Exported successfuly file " + fi.NativePath
+		  written.AddAt(0, fi.Name + " and the chart images")
+		  ReportExport(fg, written)
 		  
 		  Dim p As Picture
 		  p = w.TempChart.ToPicture
@@ -614,6 +632,67 @@ Protected Module Module1
 		    Return Nil
 		  End Try
 		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Sub ExportPositions(track As PositionTrack, map As MapView, fg As FolderItem, prefix As String)
+		  // The positions shown on a Map tab (earlier sessions included): <prefix>_positions.csv, a GPX 1.1 track
+		  // <prefix>_positions.gpx (opens in GPX viewers, Google Earth, OsmAnd...) and the map <prefix>_Map.png
+		  Dim t() As String
+		  Try
+		    Dim f As FolderItem = fg.Child(prefix + "_positions.csv")
+		    If f.Exists Then f.Remove
+		    Dim tos As TextOutputStream = TextOutputStream.Create(f)
+		    tos.WriteLine "timestamp;latitude;longitude;altitude;precision_bits;sats"
+		    For i As Integer = 0 To track.Count - 1
+		      t.RemoveAll
+		      Dim dt As New DateTime(track.Times(i))
+		      t.Add dt.SQLDateTime
+		      t.Add Format(track.Lats(i), "-0.0000000")
+		      t.Add Format(track.Lons(i), "-0.0000000")
+		      t.Add Str(track.Alts(i))
+		      t.Add Str(track.Precisions(i))
+		      t.Add Str(track.SatCounts(i))
+		      tos.WriteLine Join(t, ";")
+		    Next
+		    tos.Close
+		    
+		    f = fg.Child(prefix + "_positions.gpx")
+		    If f.Exists Then f.Remove
+		    tos = TextOutputStream.Create(f)
+		    tos.WriteLine "<?xml version=""1.0"" encoding=""UTF-8""?>"
+		    tos.WriteLine "<gpx version=""1.1"" creator=""Sensor_Dashboard"" xmlns=""http://www.topografix.com/GPX/1/1"">"
+		    tos.WriteLine "  <trk><name>" + prefix + "</name><trkseg>"
+		    Dim utc As New TimeZone(0)
+		    For i As Integer = 0 To track.Count - 1
+		      Dim d As New DateTime(track.Times(i), utc)
+		      Dim iso As String = Format(d.Year, "0000") + "-" + Format(d.Month, "00") + "-" + Format(d.Day, "00") + "T" + _
+		      Format(d.Hour, "00") + ":" + Format(d.Minute, "00") + ":" + Format(d.Second, "00") + "Z"
+		      Dim pt As String = "    <trkpt lat=""" + Format(track.Lats(i), "-0.0000000") + """ lon=""" + Format(track.Lons(i), "-0.0000000") + """>"
+		      If track.Alts(i) <> 0 Then pt = pt + "<ele>" + Str(track.Alts(i)) + "</ele>"
+		      pt = pt + "<time>" + iso + "</time>"
+		      If track.SatCounts(i) > 0 Then pt = pt + "<sat>" + Str(track.SatCounts(i)) + "</sat>"
+		      tos.WriteLine pt + "</trkpt>"
+		    Next
+		    tos.WriteLine "  </trkseg></trk>"
+		    tos.WriteLine "</gpx>"
+		    tos.Close
+		    
+		    Dim p As Picture = map.ToPicture
+		    p.Save(fg.Child(prefix + "_Map.png"), Picture.Formats.PNG, 100)
+		    LogEvents "ExportPositions", Str(track.Count) + " position(s) exported as " + prefix + "_positions.csv / .gpx / _Map.png"
+		  Catch e As IOException
+		    LogEvents "ExportPositions", "Couldn't write the position files: " + e.Message
+		  End Try
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Sub ReportExport(fg As FolderItem, written() As String)
+		  // One message for everything an export wrote
+		  LogEvents "Export", "Exported to " + fg.NativePath + ": " + Join(written, ", ")
+		  MessageBox "Exported to " + fg.NativePath + ":" + EndOfLine + EndOfLine + Join(written, EndOfLine)
+		End Sub
 	#tag EndMethod
 
 
