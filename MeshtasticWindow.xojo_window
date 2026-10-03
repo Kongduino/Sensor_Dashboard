@@ -181,7 +181,7 @@ Begin DesktopWindow MeshtasticWindow
       Panels          =   ""
       Scope           =   "0"
       SmallTabs       =   False
-      TabDefinition   =   "Temperature\rHumidity\rPressure"
+      TabDefinition   =   "Temperature\rHumidity\rPressure\rMap"
       TabIndex        =   0
       TabPanelIndex   =   0
       TabStop         =   True
@@ -369,6 +369,65 @@ Begin DesktopWindow MeshtasticWindow
          Visible         =   True
          Width           =   748
       End
+      Begin MapView PositionMap
+         AllowAutoDeactivate=   True
+         AllowFocus      =   False
+         AllowFocusRing  =   True
+         AllowTabs       =   False
+         Backdrop        =   0
+         Enabled         =   True
+         Height          =   400
+         Index           =   -2147483648
+         InitialParent   =   "TabPanel1"
+         Left            =   40
+         LockBottom      =   True
+         LockedInPosition=   False
+         LockLeft        =   True
+         LockRight       =   True
+         LockTop         =   True
+         Scope           =   "0"
+         TabIndex        =   0
+         TabPanelIndex   =   4
+         TabStop         =   True
+         Tooltip         =   ""
+         Top             =   82
+         Transparent     =   False
+         Visible         =   True
+         Width           =   748
+      End
+      Begin DesktopLabel laPositions
+         AllowAutoDeactivate=   True
+         Bold            =   False
+         Enabled         =   True
+         FontName        =   "System"
+         FontSize        =   0.0
+         FontUnit        =   0
+         Height          =   20
+         Index           =   -2147483648
+         InitialParent   =   "TabPanel1"
+         Italic          =   False
+         Left            =   40
+         LockBottom      =   True
+         LockedInPosition=   False
+         LockLeft        =   True
+         LockRight       =   False
+         LockTop         =   False
+         Multiline       =   False
+         Scope           =   "0"
+         Selectable      =   False
+         TabIndex        =   1
+         TabPanelIndex   =   4
+         TabStop         =   True
+         Text            =   ""
+         TextAlignment   =   0
+         TextColor       =   &c000000
+         Tooltip         =   ""
+         Top             =   490
+         Transparent     =   False
+         Underline       =   False
+         Visible         =   True
+         Width           =   748
+      End
    End
 End
 #tag EndDesktopWindow
@@ -471,7 +530,7 @@ End
 		  TempChart.Refresh()
 		  RHChart.Refresh()
 		  HPaChart.Refresh()
-		  If mRequested = fromNum Then
+		  If mRequested = fromNum And Not mRequestedPosition Then
 		    mRequested = 0
 		    SetStatus("reading received")
 		  End If
@@ -552,8 +611,8 @@ End
 		  If MeshTakeRouting(requestID, routeFrom, routeTo, errorCode) Then
 		    If requestID = mRequestID And mRequestID <> 0 And errorCode <> 0 Then
 		      mRequested = 0
-		      SetStatus(NodeLabel(mChartNode) + ": " + MeshRoutingErrorName(errorCode))
-		      LogSource("Telemetry request " + Str(requestID) + ": " + MeshRoutingErrorName(errorCode))
+		      SetStatus(If(mRequestedPosition, "position", "readings") + " from " + NodeLabel(mChartNode) + ": " + MeshRoutingErrorName(errorCode))
+		      LogSource(If(mRequestedPosition, "Position", "Telemetry") + " request " + Str(requestID) + " to " + NodeLabel(mChartNode) + ": " + MeshRoutingErrorName(errorCode))
 		    End If
 		  End If
 		  If jsonText <> "" Then
@@ -615,6 +674,11 @@ End
 		  If fromNum = mChartNode Then
 		    Track.Add(ts, lat, lon, alt, precision, sats)
 		    LogSource("Position of " + NodeLabel(fromNum) + ": " + Track.Summary)
+		    UpdateMap
+		    If mRequested = fromNum And mRequestedPosition Then
+		      mRequested = 0
+		      SetStatus("position received")
+		    End If
 		  End If
 		End Sub
 	#tag EndMethod
@@ -624,6 +688,21 @@ End
 		  // The followed node's positions (the Map tab)
 		  If mTrack = Nil Then mTrack = New PositionTrack
 		  Return mTrack
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Sub UpdateMap()
+		  // The Map tab: the summary line, and the map redrawn (refitted) around the track
+		  laPositions.Text = Track.Summary
+		  PositionMap.Refresh(False)
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Function OnMapTab() As Boolean
+		  // The Map tab is the last one
+		  Return TabPanel1.SelectedPanelIndex = TabPanel1.PanelCount - 1
 		End Function
 	#tag EndMethod
 
@@ -704,6 +783,7 @@ End
 		  Track.Clear
 		  Dim nPos As Integer = Track.LoadHistory(mChartNode)
 		  LogSource("Positions of " + NodeLabel(mChartNode) + ": " + Str(nPos) + " stored, " + Track.Summary)
+		  UpdateMap
 		End Sub
 	#tag EndMethod
 
@@ -763,6 +843,8 @@ End
 		  HPaChart.AddLabels paLabels
 		  HPaChart.AddTimes dhtTimes
 		  HPaChart.AddDataset LineSet("Pressure", "pressure", myPA, " hPa")
+		  
+		  PositionMap.Track = Track
 		  
 		  // Staggered below the other source windows
 		  Dim n As Integer = MyMeshtasticWindows.Count + MyAQIwindows.Count + MyMQTTwindows.Count
@@ -988,6 +1070,10 @@ End
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
+		Private mRequestedPosition As Boolean
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
 		Private mSuppressMenu As Boolean
 	#tag EndProperty
 
@@ -1016,19 +1102,40 @@ End
 		  mRequested = 0
 		  ClearCharts
 		  LoadHistory
-		  SetStatus("charting " + NodeLabel(mChartNode))
+		  SetStatus("connected") // the title adds "charting <node>"
+		End Sub
+	#tag EndEvent
+#tag EndEvents
+#tag Events TabPanel1
+	#tag Event
+		Sub PanelChanged()
+		  // Request now asks for what the tab shows
+		  If OnMapTab Then
+		    btRequest.Tooltip = "Ask the selected node for its GPS position now (through the connected node)"
+		  Else
+		    btRequest.Tooltip = "Ask the selected node for its environment readings now (through the connected node)"
+		  End If
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events btRequest
 	#tag Event
 		Sub Pressed()
-		  // Environment readings of the selected node, now: the request goes out through the connected node
+		  // The selected node, asked now through the connected node: its GPS position on the Map tab, its
+		  // environment readings on the chart tabs
 		  If mLink = Nil Or Not mLink.IsConfigured Then Return
-		  mRequestID = mLink.RequestTelemetry(mChartNode)
 		  mRequested = mChartNode
-		  LogSource("Telemetry requested from " + NodeLabel(mChartNode) + " (packet " + Str(mRequestID) + ")")
-		  SetStatus("requested from " + NodeLabel(mChartNode))
+		  If OnMapTab Then
+		    mRequestID = mLink.RequestPosition(mChartNode)
+		    mRequestedPosition = True
+		    LogSource("Position requested from " + NodeLabel(mChartNode) + " (packet " + Str(mRequestID) + ")")
+		    SetStatus("position requested from " + NodeLabel(mChartNode))
+		  Else
+		    mRequestID = mLink.RequestTelemetry(mChartNode)
+		    mRequestedPosition = False
+		    LogSource("Telemetry requested from " + NodeLabel(mChartNode) + " (packet " + Str(mRequestID) + ")")
+		    SetStatus("readings requested from " + NodeLabel(mChartNode))
+		  End If
 		End Sub
 	#tag EndEvent
 #tag EndEvents

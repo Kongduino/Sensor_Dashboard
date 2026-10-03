@@ -77,7 +77,7 @@ Begin DesktopWindow MQTTwindow
       Panels          =   ""
       Scope           =   0
       SmallTabs       =   False
-      TabDefinition   =   "Temperature\rHumidity\rPressure\rRSSI / SNR"
+      TabDefinition   =   "Temperature\rHumidity\rPressure\rRSSI / SNR\rMap"
       TabIndex        =   0
       TabPanelIndex   =   0
       TabStop         =   True
@@ -357,6 +357,65 @@ Begin DesktopWindow MQTTwindow
          Visible         =   True
          Width           =   748
       End
+      Begin MapView PositionMap
+         AllowAutoDeactivate=   True
+         AllowFocus      =   False
+         AllowFocusRing  =   True
+         AllowTabs       =   False
+         Backdrop        =   0
+         Enabled         =   True
+         Height          =   400
+         Index           =   -2147483648
+         InitialParent   =   "TabPanel1"
+         Left            =   40
+         LockBottom      =   True
+         LockedInPosition=   False
+         LockLeft        =   True
+         LockRight       =   True
+         LockTop         =   True
+         Scope           =   0
+         TabIndex        =   0
+         TabPanelIndex   =   5
+         TabStop         =   True
+         Tooltip         =   ""
+         Top             =   82
+         Transparent     =   False
+         Visible         =   True
+         Width           =   748
+      End
+      Begin DesktopLabel laPositions
+         AllowAutoDeactivate=   True
+         Bold            =   False
+         Enabled         =   True
+         FontName        =   "System"
+         FontSize        =   0.0
+         FontUnit        =   0
+         Height          =   20
+         Index           =   -2147483648
+         InitialParent   =   "TabPanel1"
+         Italic          =   False
+         Left            =   40
+         LockBottom      =   True
+         LockedInPosition=   False
+         LockLeft        =   True
+         LockRight       =   False
+         LockTop         =   False
+         Multiline       =   False
+         Scope           =   0
+         Selectable      =   False
+         TabIndex        =   1
+         TabPanelIndex   =   5
+         TabStop         =   True
+         Text            =   ""
+         TextAlignment   =   0
+         TextColor       =   &c000000
+         Tooltip         =   ""
+         Top             =   490
+         Transparent     =   False
+         Underline       =   False
+         Visible         =   True
+         Width           =   748
+      End
    End
    Begin MQTTClient MQTTClient1
       Address         =   ""
@@ -496,6 +555,7 @@ End
 		  Track.Clear
 		  Dim nPos As Integer = Track.LoadHistory(PositionNode)
 		  LogEvents "MQTTwindow", "Positions: " + Str(nPos) + " stored, " + Track.Summary
+		  UpdateMap
 		End Sub
 	#tag EndMethod
 
@@ -514,6 +574,7 @@ End
 		  LogPosition(fromNum, gatewayNum, ts, lat, lon, alt, precision, sats)
 		  Track.Add(ts, lat, lon, alt, precision, sats)
 		  LogEvents "MQTTwindow", "Position: " + Track.Summary
+		  UpdateMap
 		End Sub
 	#tag EndMethod
 
@@ -531,6 +592,14 @@ End
 		  If mTrack = Nil Then mTrack = New PositionTrack
 		  Return mTrack
 		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Sub UpdateMap()
+		  // The Map tab: the summary line, and the map redrawn (refitted) around the track
+		  laPositions.Text = Track.Summary
+		  PositionMap.Refresh(False)
+		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
@@ -613,6 +682,7 @@ End
 		  SNRSSIchart.AddTimes snrTimes
 		  SNRSSIchart.AddDatasets LineSet("RSSI", "rssi", myRSSI, " dBm"), LineSet("SNR", "snr", mySNR, " dB")
 		  
+		  PositionMap.Track = Track
 		  LoadHistory
 		  Self.Show()
 		  

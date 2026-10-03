@@ -183,19 +183,21 @@ Protected Class MeshDeviceLink
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
+		Function RequestPosition(toNode As UInt32) As UInt32
+		  // Asks a node for its GPS position through the device: a POSITION_APP packet (portnum 3) with want_response
+		  // and an empty Position. A node with a fix answers with its position (the device passes it on through
+		  // PacketReceived); one without, or that doesn't share it, answers NO_RESPONSE. Returns the packet id
+		  Return SendRequest(toNode, 3, "")
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Function RequestTelemetry(toNode As UInt32, kind As Integer = 3) As UInt32
 		  // Asks a node for its telemetry through the device: a TELEMETRY_APP packet (portnum 67) with want_response,
 		  // holding an empty metrics message of the kind wanted (Telemetry field: 2 device, 3 environment, 4 air
 		  // quality, 5 power). The device encrypts and sends it; the answer comes back to the device, which decrypts
 		  // it and passes it on (PacketReceived). Returns the request's packet id (0 if not connected)
-		  If Not mOpen Then Return 0
-		  Dim packetID As UInt32 = MeshNewPacketID()
-		  Dim data As String = ProtoFieldVarint(1, 67) + ProtoFieldBytes(2, ProtoFieldBytes(kind, "")) + ProtoFieldVarint(3, 1)
-		  // MeshPacket: 2 to, 4 decoded, 6 id, 9 hop_limit, 10 want_ack (the device fills in from and the channel)
-		  Dim packet As String = ProtoFieldFixed32(2, toNode) + ProtoFieldBytes(4, data) + ProtoFieldFixed32(6, packetID) + _
-		  ProtoFieldVarint(9, 3) + ProtoFieldVarint(10, 1)
-		  SendToRadio(ProtoFieldBytes(1, packet)) // ToRadio.packet
-		  Return packetID
+		  Return SendRequest(toNode, 67, ProtoFieldBytes(kind, ""))
 		End Function
 	#tag EndMethod
 
@@ -317,6 +319,21 @@ Protected Class MeshDeviceLink
 		  Loop Until mConfigNonce <> 69420 And mConfigNonce <> 69421
 		  SendToRadio(ProtoFieldVarint(3, mConfigNonce))
 		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Function SendRequest(toNode As UInt32, portnum As Integer, payload As String) As UInt32
+		  // A packet with want_response to one node, sent through the device (0 if not connected)
+		  If Not mOpen Then Return 0
+		  Dim packetID As UInt32 = MeshNewPacketID()
+		  // Data: 1 portnum, 2 payload, 3 want_response
+		  Dim data As String = ProtoFieldVarint(1, portnum) + ProtoFieldBytes(2, payload) + ProtoFieldVarint(3, 1)
+		  // MeshPacket: 2 to, 4 decoded, 6 id, 9 hop_limit, 10 want_ack (the device fills in from and the channel)
+		  Dim packet As String = ProtoFieldFixed32(2, toNode) + ProtoFieldBytes(4, data) + ProtoFieldFixed32(6, packetID) + _
+		  ProtoFieldVarint(9, 3) + ProtoFieldVarint(10, 1)
+		  SendToRadio(ProtoFieldBytes(1, packet)) // ToRadio.packet
+		  Return packetID
+		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h21

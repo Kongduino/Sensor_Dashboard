@@ -42,6 +42,8 @@ Protected Module ChartLook
 		    Return If(dark, &cFFA94D, &cFD7E14)
 		  Case "pm4" // red
 		    Return If(dark, &cFF8787, &cE03131)
+		  Case "position" // magenta
+		    Return If(dark, &cF06595, &cD6336C)
 		  Case "pm10" // grape
 		    Return If(dark, &cDA77F2, &c862E9C)
 		  Else
