@@ -4,6 +4,8 @@ Protected Module Curve25519
 		Function X25519(scalar As String, point As String) As String
 		  // Curve25519 Diffie-Hellman (RFC 7748): scalar (32 bytes, clamped here) times point (32 bytes, u coordinate).
 		  // Montgomery ladder ported from TweetNaCl's crypto_scalarmult. Returns 32 bytes, "" on bad input
+		  scalar = MeshBin(scalar)
+		  point = MeshBin(point)
 		  If scalar.Bytes <> 32 Or point.Bytes <> 32 Then Return ""
 		  Dim z As MemoryBlock = scalar
 		  Dim zc As New MemoryBlock(32)

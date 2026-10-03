@@ -269,7 +269,7 @@ Protected Module MeshDecode
 		  Dim mask, gpioValue As UInt64
 		  While r.ReadTag(field, wireType)
 		    If field >= 1 And field <= 3 And wireType = 0 Then
-		      Dim v As UInt64 = r.ReadVarint
+		      Dim v As UInt64 = r.ReadVarint()
 		      If field = 1 Then
 		        msgType = CType(v, Integer)
 		      ElseIf field = 2 Then
@@ -323,7 +323,7 @@ Protected Module MeshDecode
 		    kind = ""
 		    For Each entry As String In entries
 		      Dim cols() As String = entry.Split(":")
-		      If cols(0).ToInteger = field Then
+		      If cols(0).ToInteger() = field Then
 		        name = cols(1)
 		        kind = cols(2)
 		        Exit For
@@ -336,7 +336,7 @@ Protected Module MeshDecode
 		      parts.Add(name + " " + MeshDisplayFloat(v))
 		    Case "u", "c"
 		      If wireType <> 0 Then Return "(bad metrics)"
-		      Dim n As UInt64 = r.ReadVarint
+		      Dim n As UInt64 = r.ReadVarint()
 		      If kind = "c" Then
 		        Dim hundredths As Double = n / 100
 		        parts.Add(name + " " + hundredths.ToString(Locale.Raw, "0.##"))
@@ -369,7 +369,7 @@ Protected Module MeshDecode
 		    Select Case field
 		    Case 1, 2, 3 // node_id, last_sent_by_id, node_broadcast_interval_secs
 		      If wireType <> 0 Then Return "(bad neighborinfo)"
-		      Dim v As UInt32 = CType(r.ReadVarint, UInt32)
+		      Dim v As UInt32 = CType(r.ReadVarint(), UInt32)
 		      If field = 1 Then
 		        nodeID = v
 		      ElseIf field = 2 Then
@@ -386,7 +386,7 @@ Protected Module MeshDecode
 		      Dim nField, nWireType As Integer
 		      While n.ReadTag(nField, nWireType)
 		        If nField = 1 And nWireType = 0 Then
-		          neighborID = CType(n.ReadVarint, UInt32)
+		          neighborID = CType(n.ReadVarint(), UInt32)
 		        ElseIf nField = 2 And nWireType = 5 Then
 		          snr = n.ReadFloat
 		        Else
@@ -430,6 +430,7 @@ Protected Module MeshDecode
 		  packetKey = ""
 		  mRoutingValid = False
 		  mAckRequestValid = False
+		  payload = MeshBin(payload) // one byte per character on Android (see MeshBin)
 		  If payload.Bytes = 0 Then Return ""
 		  Dim mb As MemoryBlock = payload
 		  Dim env As New ProtoReader(mb)
@@ -494,7 +495,7 @@ Protected Module MeshDecode
 		      rxSnr = packet.ReadFloat
 		    Case 3, 9, 15
 		      If wireType <> 0 Then Return ""
-		      Dim v As UInt32 = CType(packet.ReadVarint, UInt32)
+		      Dim v As UInt32 = CType(packet.ReadVarint(), UInt32)
 		      If field = 3 Then
 		        channel = v
 		      ElseIf field = 9 Then
@@ -507,10 +508,10 @@ Protected Module MeshDecode
 		      rxRssi = packet.ReadInt32
 		    Case 17 // pki_encrypted
 		      If wireType <> 0 Then Return ""
-		      pkiEncrypted = (packet.ReadVarint <> 0)
+		      pkiEncrypted = (packet.ReadVarint() <> 0)
 		    Case 10 // want_ack
 		      If wireType <> 0 Then Return ""
-		      wantAck = (packet.ReadVarint <> 0)
+		      wantAck = (packet.ReadVarint() <> 0)
 		    Else
 		      packet.Skip(wireType)
 		    End Select
@@ -521,7 +522,7 @@ Protected Module MeshDecode
 		  Dim decrypted As Boolean
 		  Dim keyName As String
 		  Dim pkiDecrypted As Boolean
-		  If portnum < 0 And hasEncrypted And MeshPKIReady() And (toNode = MeshPKINodeNum() Or fromNode = MeshPKINodeNum()) And (pkiEncrypted Or StrComp(channelID, "PKI", 0) = 0) Then
+		  If portnum < 0 And hasEncrypted And MeshPKIReady() And (toNode = MeshPKINodeNum() Or fromNode = MeshPKINodeNum()) And (pkiEncrypted Or MeshSameText(channelID, "PKI")) Then
 		    // A PKI direct message to or from our own node: the shared key is the same from both ends,
 		    // so it decrypts with our private key and the other node's public key
 		    Dim senderKey As String
@@ -554,13 +555,13 @@ Protected Module MeshDecode
 		    line = line + "port " + portnum.ToString + " " + MeshPortName(portnum)
 		    If pkiDecrypted Then line = line + " (PKI direct message, decrypted)"
 		    If decrypted Then
-		      If StrComp(keyName, channelID, 0) = 0 Then
+		      If MeshSameText(keyName, channelID) Then
 		        line = line + " (decrypted)"
 		      Else
 		        line = line + " (decrypted with " + keyName + ")"
 		      End If
 		    End If
-		  ElseIf hasEncrypted And (pkiEncrypted Or StrComp(channelID, "PKI", 0) = 0) Then
+		  ElseIf hasEncrypted And (pkiEncrypted Or MeshSameText(channelID, "PKI")) Then
 		    line = line + "PKI direct message (" + encrypted.Bytes.ToString + " bytes, needs the recipient's private key)"
 		  ElseIf hasEncrypted Then
 		    line = line + "encrypted (" + encrypted.Bytes.ToString + " bytes, channel hash " + channel.ToString + ", no matching key)"
@@ -591,7 +592,7 @@ Protected Module MeshDecode
 		      Dim routingCode As Integer = -1
 		      While routingReader.ReadTag(routingField, routingWire)
 		        If routingField = 3 And routingWire = 0 Then
-		          routingCode = CType(routingReader.ReadVarint, Integer)
+		          routingCode = CType(routingReader.ReadVarint(), Integer)
 		        Else
 		          routingReader.Skip(routingWire)
 		        End If
@@ -629,7 +630,7 @@ Protected Module MeshDecode
 		  Dim field, wireType As Integer
 		  While data.ReadTag(field, wireType)
 		    If field = 1 And wireType = 0 Then
-		      portnum = CType(data.ReadVarint, Integer)
+		      portnum = CType(data.ReadVarint(), Integer)
 		    ElseIf field = 2 And wireType = 2 Then
 		      payload = data.ReadBytes()
 		    ElseIf field = 6 And wireType = 5 Then
@@ -651,7 +652,7 @@ Protected Module MeshDecode
 		  Dim wifi, ble, uptime As UInt32
 		  While r.ReadTag(field, wireType)
 		    If field >= 1 And field <= 3 And wireType = 0 Then
-		      Dim v As UInt32 = CType(r.ReadVarint, UInt32)
+		      Dim v As UInt32 = CType(r.ReadVarint(), UInt32)
 		      If field = 1 Then
 		        wifi = v
 		      ElseIf field = 2 Then
@@ -797,10 +798,10 @@ Protected Module MeshDecode
 		      posTime = r.ReadFixed32
 		    Case 19 // sats_in_view
 		      If wireType <> 0 Then Return "(bad position)"
-		      sats = CType(r.ReadVarint, UInt32)
+		      sats = CType(r.ReadVarint(), UInt32)
 		    Case 23 // precision_bits
 		      If wireType <> 0 Then Return "(bad position)"
-		      precision = CType(r.ReadVarint, UInt32)
+		      precision = CType(r.ReadVarint(), UInt32)
 		    Else
 		      r.Skip(wireType)
 		    End Select
@@ -939,7 +940,7 @@ Protected Module MeshDecode
 		  Dim what As String
 		  While r.ReadTag(field, wireType)
 		    If field = 3 And wireType = 0 Then
-		      code = CType(r.ReadVarint, Integer)
+		      code = CType(r.ReadVarint(), Integer)
 		    ElseIf field = 1 Then
 		      what = "route request"
 		      r.Skip(wireType)
@@ -1072,7 +1073,7 @@ Protected Module MeshDecode
 	#tag Method, Flags = &h0
 		Function MeshTextSummary(payload As String) As String
 		  // TEXT_MESSAGE_APP: raw UTF-8, kept on one line
-		  Dim s As String = payload.DefineEncoding(Encodings.UTF8)
+		  Dim s As String = MeshUTF8Text(payload)
 		  s = s.ReplaceLineEndings(" ")
 		  Return """" + s + """"
 		End Function
@@ -1145,10 +1146,10 @@ Protected Module MeshDecode
 		      End If
 		    Case 5 // hw_model
 		      If wireType <> 0 Then Return "(bad nodeinfo)"
-		      hwModel = CType(r.ReadVarint, Integer)
+		      hwModel = CType(r.ReadVarint(), Integer)
 		    Case 7 // role
 		      If wireType <> 0 Then Return "(bad nodeinfo)"
-		      role = CType(r.ReadVarint, Integer)
+		      role = CType(r.ReadVarint(), Integer)
 		    Else
 		      r.Skip(wireType)
 		    End Select
@@ -1172,7 +1173,7 @@ Protected Module MeshDecode
 		    Select Case field
 		    Case 1 // id
 		      If wireType <> 0 Then Return "(bad waypoint)"
-		      waypointID = CType(r.ReadVarint, UInt32)
+		      waypointID = CType(r.ReadVarint(), UInt32)
 		    Case 2 // latitude_i, sfixed32
 		      If wireType <> 5 Then Return "(bad waypoint)"
 		      lat = r.ReadSFixed32
@@ -1183,10 +1184,10 @@ Protected Module MeshDecode
 		      hasLon = True
 		    Case 4 // expire, unix time
 		      If wireType <> 0 Then Return "(bad waypoint)"
-		      expire = CType(r.ReadVarint, UInt32)
+		      expire = CType(r.ReadVarint(), UInt32)
 		    Case 5 // locked_to, node number
 		      If wireType <> 0 Then Return "(bad waypoint)"
-		      lockedTo = CType(r.ReadVarint, UInt32)
+		      lockedTo = CType(r.ReadVarint(), UInt32)
 		    Case 6, 7 // name, description
 		      If wireType <> 2 Then Return "(bad waypoint)"
 		      Dim s As String = r.ReadString

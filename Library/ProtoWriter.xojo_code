@@ -1,10 +1,42 @@
 #tag Module
 Protected Module ProtoWriter
 	#tag Method, Flags = &h0
+		Function MeshBin(s As String) As String
+		  // Binary data, one byte per character. On Android a String made by concatenation, ChrByte or ReadAll is tagged
+		  // UTF-8, and its byte view (Bytes, MiddleBytes, AscByte, EncodeHex, TCPSocket.Write, MemoryBlock conversion) then
+		  // counts every character from 128 to 255 as two bytes. MeshBin returns a copy tagged ISO-8859-1 (one byte per
+		  // character); slices of it (MiddleBytes, LeftBytes) keep the tag, a concatenation loses it.
+		  // The library's rule: a binary String is passed between methods only in this form (methods that build one by
+		  // concatenation return MeshBin(...), always-binary parameters are passed through MeshBin on entry). Text stays text.
+		  // On desktop it returns s unchanged
+		  #If TargetAndroid Then
+		    Dim t As String = s + "" // a new String: on Android DefineEncoding changes the String object itself
+		    Return t.DefineEncoding(Encodings.ISOLatin1)
+		  #Else
+		    Return s
+		  #EndIf
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function MeshUTF8Text(bytes As String) As String
+		  // UTF-8 bytes (one byte per character, see MeshBin) as text. On desktop that is only a label (DefineEncoding);
+		  // on Android the bytes must really be decoded
+		  #If TargetAndroid Then
+		    If bytes.Bytes = 0 Then Return ""
+		    Dim mb As MemoryBlock = MeshBin(bytes)
+		    Return mb.StringValue(0, mb.Size, Encodings.UTF8)
+		  #Else
+		    Return bytes.DefineEncoding(Encodings.UTF8)
+		  #EndIf
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Function ProtoFieldBytes(field As Integer, data As String) As String
 		  // bytes, string (UTF-8) and embedded messages
 		  Dim raw As String = ProtoRawBytes(data)
-		  Return ProtoKey(field, 2) + ProtoVarint(raw.Bytes) + raw
+		  Return MeshBin(ProtoKey(field, 2) + ProtoVarint(raw.Bytes) + raw)
 		End Function
 	#tag EndMethod
 
@@ -13,7 +45,7 @@ Protected Module ProtoWriter
 		  Dim m As New MemoryBlock(4)
 		  m.LittleEndian = True
 		  m.UInt32Value(0) = value
-		  Return ProtoKey(field, 5) + m.StringValue(0, 4)
+		  Return MeshBin(ProtoKey(field, 5) + m.StringValue(0, 4))
 		End Function
 	#tag EndMethod
 
@@ -32,14 +64,14 @@ Protected Module ProtoWriter
 		  Dim m As New MemoryBlock(4)
 		  m.LittleEndian = True
 		  m.Int32Value(0) = value
-		  Return ProtoKey(field, 5) + m.StringValue(0, 4)
+		  Return MeshBin(ProtoKey(field, 5) + m.StringValue(0, 4))
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
 		Function ProtoFieldVarint(field As Integer, value As UInt64) As String
 		  // uint32, uint64, bool, enum
-		  Return ProtoKey(field, 0) + ProtoVarint(value)
+		  Return MeshBin(ProtoKey(field, 0) + ProtoVarint(value))
 		End Function
 	#tag EndMethod
 

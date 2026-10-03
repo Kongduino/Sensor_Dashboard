@@ -156,7 +156,7 @@ Protected Class ProtoReader
 
 	#tag Method, Flags = &h0
 		Function ReadString() As String
-		  Return ReadBytes().DefineEncoding(Encodings.UTF8)
+		  Return MeshUTF8Text(ReadBytes())
 		End Function
 	#tag EndMethod
 
@@ -167,7 +167,8 @@ Protected Class ProtoReader
 		  Dim tag As UInt64 = ReadVarint()
 		  If mFailed Then Return False
 		  wireType = CType(tag And 7, Integer)
-		  field = CType(Bitwise.ShiftRight(tag, 3), Integer)
+		  Dim shifted As UInt64 = Bitwise.ShiftRight(tag, 3) // not inside CType: Android's translation loses the argument
+		  field = CType(shifted, Integer)
 		  If field <= 0 Or field > 536870911 Then
 		    mFailed = True
 		    Return False

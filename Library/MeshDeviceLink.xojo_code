@@ -13,7 +13,7 @@ Protected Class MeshDeviceLink
 		End Sub
 	#tag EndMethod
 
-	#tag Method, Flags = &h0
+	#tag Method, Flags = &h0, CompatibilityFlags = (TargetConsole and (Target32Bit or Target64Bit)) or  (TargetDesktop and (Target32Bit or Target64Bit))
 		Sub ConnectSerial(device As SerialDevice)
 		  // Opens the device's USB serial port (115200 baud, 8N1), then asks it for its configuration
 		  Close
@@ -53,6 +53,7 @@ Protected Class MeshDeviceLink
 	#tag Method, Flags = &h21
 		Private Sub HandleFromRadio(payload As String)
 		  // One FromRadio message: 2 packet, 3 my_info, 4 node_info, 6 log_record, 7 config_complete_id, 8 rebooted
+		  payload = MeshBin(payload) // one byte per character on Android (see MeshBin)
 		  Dim mb As MemoryBlock = payload
 		  Dim r As New ProtoReader(mb)
 		  Dim field, wireType As Integer
@@ -62,7 +63,7 @@ Protected Class MeshDeviceLink
 		      If wireType <> 2 Then Return
 		      Dim packet As String = r.ReadBytes
 		      // Wrapped as a ServiceEnvelope from this node, so MeshPacketSummary decodes it like an MQTT message
-		      RaiseEvent PacketReceived(ProtoFieldBytes(1, packet) + ProtoFieldBytes(3, MeshNodeID(mMyNodeNum)))
+		      RaiseEvent PacketReceived(MeshBin(ProtoFieldBytes(1, packet) + ProtoFieldBytes(3, MeshNodeID(mMyNodeNum))))
 		    Case 3
 		      If wireType <> 2 Then Return
 		      ParseMyInfo(r.ReadMessage)
@@ -81,13 +82,13 @@ Protected Class MeshDeviceLink
 		        End If
 		      Wend
 		    Case 7
-		      Dim doneID As UInt64 = r.ReadVarint
+		      Dim doneID As UInt64 = r.ReadVarint()
 		      If doneID = mConfigNonce And Not mConfigDone Then
 		        mConfigDone = True
 		        RaiseEvent ConfigComplete
 		      End If
 		    Case 8
-		      Call r.ReadVarint
+		      Call r.ReadVarint()
 		      RaiseEvent LogLine("The device rebooted: asking for its configuration again")
 		      RequestConfig
 		    Else
@@ -131,7 +132,11 @@ Protected Class MeshDeviceLink
 		  RequestConfig
 		  If mHeartbeat = Nil Then
 		    mHeartbeat = New Timer
-		    AddHandler mHeartbeat.Action, WeakAddressOf HeartbeatAction
+		    #If TargetAndroid Then
+		      AddHandler mHeartbeat.Run, WeakAddressOf HeartbeatAction
+		    #Else
+		      AddHandler mHeartbeat.Action, WeakAddressOf HeartbeatAction
+		    #EndIf
 		  End If
 		  mHeartbeat.Period = 60000
 		  mHeartbeat.RunMode = Timer.RunModes.Multiple
@@ -207,7 +212,7 @@ Protected Class MeshDeviceLink
 		  Dim field, wireType As Integer
 		  While r.ReadTag(field, wireType)
 		    If field = 1 And wireType = 0 Then
-		      mMyNodeNum = r.ReadVarint
+		      mMyNodeNum = r.ReadVarint()
 		    Else
 		      r.Skip(wireType)
 		    End If
@@ -223,7 +228,7 @@ Protected Class MeshDeviceLink
 		  Dim longName, shortName As String
 		  While r.ReadTag(field, wireType)
 		    If field = 1 And wireType = 0 Then
-		      num = r.ReadVarint
+		      num = r.ReadVarint()
 		    ElseIf field = 2 And wireType = 2 Then
 		      Dim user As ProtoReader = r.ReadMessage
 		      Dim f2, w2 As Integer
@@ -262,7 +267,7 @@ Protected Class MeshDeviceLink
 		Private Sub Receive(data As String)
 		  // The stream: frames 0x94 0xC3 <length, 2 bytes big-endian> <FromRadio>, with the device's text console
 		  // output (when it is not in API mode) in between
-		  mBuffer = mBuffer + data
+		  mBuffer = MeshBin(mBuffer + data) // one byte per character on Android (see MeshBin)
 		  Do
 		    Dim start As Integer = mBuffer.IndexOfBytes(String.ChrByte(kStart1))
 		    If start < 0 Then
@@ -294,13 +299,13 @@ Protected Class MeshDeviceLink
 	#tag Method, Flags = &h21
 		Private Sub ReceiveText(s As String)
 		  // Console text between frames: passed on line by line
-		  mText = mText + s
+		  mText = MeshBin(mText + s)
 		  Do
 		    Dim nl As Integer = mText.IndexOfBytes(String.ChrByte(10))
 		    If nl < 0 Then Exit
 		    Dim line As String = mText.LeftBytes(nl).ReplaceAllBytes(String.ChrByte(13), "")
 		    mText = mText.MiddleBytes(nl + 1)
-		    If line.Trim <> "" Then RaiseEvent LogLine(line.DefineEncoding(Encodings.UTF8))
+		    If line.Trim <> "" Then RaiseEvent LogLine(MeshUTF8Text(line))
 		  Loop
 		  If mText.Bytes > 4096 Then mText = "" // not text after all
 		End Sub
@@ -327,10 +332,10 @@ Protected Class MeshDeviceLink
 		  If Not mOpen Then Return 0
 		  Dim packetID As UInt32 = MeshNewPacketID()
 		  // Data: 1 portnum, 2 payload, 3 want_response
-		  Dim data As String = ProtoFieldVarint(1, portnum) + ProtoFieldBytes(2, payload) + ProtoFieldVarint(3, 1)
+		  Dim data As String = MeshBin(ProtoFieldVarint(1, portnum) + ProtoFieldBytes(2, payload) + ProtoFieldVarint(3, 1))
 		  // MeshPacket: 2 to, 4 decoded, 6 id, 9 hop_limit, 10 want_ack (the device fills in from and the channel)
-		  Dim packet As String = ProtoFieldFixed32(2, toNode) + ProtoFieldBytes(4, data) + ProtoFieldFixed32(6, packetID) + _
-		  ProtoFieldVarint(9, 3) + ProtoFieldVarint(10, 1)
+		  Dim packet As String = MeshBin(ProtoFieldFixed32(2, toNode) + ProtoFieldBytes(4, data) + ProtoFieldFixed32(6, packetID) + _
+		  ProtoFieldVarint(9, 3) + ProtoFieldVarint(10, 1))
 		  SendToRadio(ProtoFieldBytes(1, packet)) // ToRadio.packet
 		  Return packetID
 		End Function
@@ -339,18 +344,19 @@ Protected Class MeshDeviceLink
 	#tag Method, Flags = &h21
 		Private Sub SendToRadio(payload As String)
 		  // One ToRadio message, framed
+		  payload = MeshBin(payload)
 		  Dim n As Integer = payload.Bytes
 		  WriteRaw(String.ChrByte(kStart1) + String.ChrByte(kStart2) + String.ChrByte(n \ 256) + String.ChrByte(n Mod 256) + payload)
 		End Sub
 	#tag EndMethod
 
-	#tag Method, Flags = &h21
+	#tag Method, Flags = &h21, CompatibilityFlags = (TargetConsole and (Target32Bit or Target64Bit)) or  (TargetDesktop and (Target32Bit or Target64Bit))
 		Private Sub SerialDataReceived(sender As SerialConnection)
 		  Receive(sender.ReadAll)
 		End Sub
 	#tag EndMethod
 
-	#tag Method, Flags = &h21
+	#tag Method, Flags = &h21, CompatibilityFlags = (TargetConsole and (Target32Bit or Target64Bit)) or  (TargetDesktop and (Target32Bit or Target64Bit))
 		Private Sub SerialError(sender As SerialConnection, e As RuntimeException)
 		  Dim reason As String = "serial error " + Str(e.ErrorNumber) + ": " + e.Message
 		  Teardown
@@ -399,22 +405,27 @@ Protected Class MeshDeviceLink
 		    mTCP.Close
 		    mTCP = Nil
 		  End If
-		  If mSerial <> Nil Then
-		    RemoveHandler mSerial.DataReceived, WeakAddressOf SerialDataReceived
-		    RemoveHandler mSerial.Error, WeakAddressOf SerialError
-		    mSerial.Close
-		    mSerial = Nil
-		  End If
+		  #If Not TargetAndroid Then
+		    If mSerial <> Nil Then
+		      RemoveHandler mSerial.DataReceived, WeakAddressOf SerialDataReceived
+		      RemoveHandler mSerial.Error, WeakAddressOf SerialError
+		      mSerial.Close
+		      mSerial = Nil
+		    End If
+		  #EndIf
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
 		Private Sub WriteRaw(s As String)
+		  s = MeshBin(s) // on Android the bytes go out one per character only when the String is tagged so (see MeshBin)
 		  If mTCP <> Nil Then
 		    mTCP.Write(s)
-		  ElseIf mSerial <> Nil Then
-		    mSerial.Write(s)
+		    Return
 		  End If
+		  #If Not TargetAndroid Then
+		    If mSerial <> Nil Then mSerial.Write(s)
+		  #EndIf
 		End Sub
 	#tag EndMethod
 
@@ -480,7 +491,7 @@ Protected Class MeshDeviceLink
 		Private mOpen As Boolean
 	#tag EndProperty
 
-	#tag Property, Flags = &h21
+	#tag Property, Flags = &h21, CompatibilityFlags = (TargetConsole and (Target32Bit or Target64Bit)) or  (TargetDesktop and (Target32Bit or Target64Bit))
 		Private mSerial As SerialConnection
 	#tag EndProperty
 

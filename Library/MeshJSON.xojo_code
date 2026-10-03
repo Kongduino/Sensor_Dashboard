@@ -1,6 +1,14 @@
 #tag Module
 Protected Module MeshJSON
 	#tag Method, Flags = &h0
+		Function MeshSameText(a As String, b As String) As Boolean
+		  // Case-sensitive equality on every platform (StrComp doesn't exist on Android)
+		  If a.Bytes <> b.Bytes Then Return False
+		  Return a.Compare(b, ComparisonOptions.CaseSensitive) = 0
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Function MeshExactDigits(d As Double, ByRef digits As String, ByRef pointPos As Integer, ByRef negative As Boolean) As Boolean
 		  // Exact decimal expansion of a Double (finite, since it is mantissa * 2^e2): value = 0.digits * 10^pointPos,
 		  // first digit non-zero, digits = "" for zero. False if it doesn't fit in 64-bit arithmetic (|d| < ~1e-11 or > 9e18)
@@ -9,7 +17,8 @@ Protected Module MeshJSON
 		  bits.DoubleValue(0) = d
 		  Dim raw As UInt64 = bits.UInt64Value(0)
 		  negative = (Bitwise.ShiftRight(raw, 63) = 1)
-		  Dim expBits As Integer = CType(Bitwise.ShiftRight(raw, 52) And 2047, Integer)
+		  Dim expRaw As UInt64 = Bitwise.ShiftRight(raw, 52) // not inside CType: Android's translation loses the argument
+		  Dim expBits As Integer = CType(expRaw And 2047, Integer)
 		  Dim mantissa As UInt64 = raw - Bitwise.ShiftLeft(Bitwise.ShiftRight(raw, 52), 52)
 		  digits = ""
 		  pointPos = 0
@@ -72,7 +81,7 @@ Protected Module MeshJSON
 		  Dim mask, gpioValue As UInt64
 		  While r.ReadTag(field, wireType)
 		    If field >= 1 And field <= 3 And wireType = 0 Then
-		      Dim v As UInt64 = r.ReadVarint
+		      Dim v As UInt64 = r.ReadVarint()
 		      If field = 1 Then
 		        msgType = CType(v, Integer)
 		      ElseIf field = 2 Then
@@ -229,7 +238,7 @@ Protected Module MeshJSON
 		      d = bits.DoubleValue(0)
 		    End If
 		    Dim got As String = MeshJSONFloat(d)
-		    If StrComp(got, cols(1), 0) <> 0 Then failures.Add(cols(1) + " gave " + got)
+		    If Not MeshSameText(got, cols(1)) Then failures.Add(cols(1) + " gave " + got)
 		  Next
 		  If failures.Count = 0 Then Return "JSON float self-test OK (" + cases.Count.ToString + " values)"
 		  Return "JSON float self-test FAILED: " + String.FromArray(failures, "; ")
@@ -293,7 +302,7 @@ Protected Module MeshJSON
 		  If spec <> "" Then
 		    For Each entry As String In spec.Split(",")
 		      Dim cols() As String = entry.Split(":")
-		      nums.Add(cols(0).ToInteger)
+		      nums.Add(cols(0).ToInteger())
 		      names.Add(cols(1))
 		      kinds.Add(cols(2))
 		      gates.Add(cols(3))
@@ -317,7 +326,7 @@ Protected Module MeshJSON
 		      nonZero(idx) = (fv <> 0)
 		    Case "u", "c"
 		      If wireType <> 0 Then Return ""
-		      Dim uv As UInt64 = r.ReadVarint
+		      Dim uv As UInt64 = r.ReadVarint()
 		      If kinds(idx) = "c" Then
 		        Dim hv As Double = uv / 100
 		        values(idx) = MeshJSONFloat(hv)
@@ -380,7 +389,7 @@ Protected Module MeshJSON
 		    Select Case field
 		    Case 1, 2, 3
 		      If wireType <> 0 Then Return ""
-		      Dim v As UInt32 = CType(r.ReadVarint, UInt32)
+		      Dim v As UInt32 = CType(r.ReadVarint(), UInt32)
 		      If field = 1 Then
 		        nodeID = v
 		      ElseIf field = 2 Then
@@ -397,7 +406,7 @@ Protected Module MeshJSON
 		      Dim nField, nWireType As Integer
 		      While n.ReadTag(nField, nWireType)
 		        If nField = 1 And nWireType = 0 Then
-		          neighborID = CType(n.ReadVarint, UInt32)
+		          neighborID = CType(n.ReadVarint(), UInt32)
 		        ElseIf nField = 2 And nWireType = 5 Then
 		          snr = n.ReadFloat
 		        Else
@@ -576,7 +585,7 @@ Protected Module MeshJSON
 		  For p As Integer = 1 To maxP
 		    Dim nearestUp As Boolean = False
 		    If digits.Length > p Then
-		      Dim nextDigit As Integer = digits.Middle(p, 1).ToInteger
+		      Dim nextDigit As Integer = digits.Middle(p, 1).ToInteger()
 		      If nextDigit > 5 Then
 		        nearestUp = True
 		      ElseIf nextDigit = 5 Then
@@ -589,7 +598,7 @@ Protected Module MeshJSON
 		          End If
 		        Next
 		        If restZero Then
-		          nearestUp = (digits.Middle(p - 1, 1).ToInteger Mod 2 = 1)
+		          nearestUp = (digits.Middle(p - 1, 1).ToInteger() Mod 2 = 1)
 		        Else
 		          nearestUp = True
 		        End If
@@ -675,7 +684,7 @@ Protected Module MeshJSON
 		      Return MeshJSONFromItem(item)
 		    Catch err As JSONException
 		    End Try
-		  ElseIf StrComp(trimmed, "true", 0) = 0 Or StrComp(trimmed, "false", 0) = 0 Or StrComp(trimmed, "null", 0) = 0 Then
+		  ElseIf MeshSameText(trimmed, "true") Or MeshSameText(trimmed, "false") Or MeshSameText(trimmed, "null") Then
 		    Return trimmed
 		  Else
 		    Dim re As New RegEx
@@ -756,7 +765,7 @@ Protected Module MeshJSON
 		    pieces.Add(mb.StringValue(startPos, length))
 		  Wend
 		  Dim result As String = String.FromArray(pieces, "")
-		  Return result.DefineEncoding(Encodings.UTF8)
+		  Return MeshUTF8Text(result)
 		End Function
 	#tag EndMethod
 

@@ -1,5 +1,184 @@
 #tag Module
 Protected Module MeshCrypto
+	#tag Method, Flags = &h21
+		Private Function AESEncryptBlock(w As MemoryBlock, rounds As Integer, blk As MemoryBlock) As Boolean
+		  // Encrypts the 16 bytes of blk in place with the round keys w (FIPS-197 5.1). Always True
+		  Dim sb As MemoryBlock = AESSBox()
+		  Dim s(15) As Integer
+		  Dim t(15) As Integer
+		  For i As Integer = 0 To 15
+		    s(i) = Bitwise.BitXor(blk.UInt8Value(i), w.UInt8Value(i))
+		  Next
+		  For r As Integer = 1 To rounds
+		    // SubBytes and ShiftRows (the state is column by column: row rr of column c comes from column c + rr)
+		    For c As Integer = 0 To 3
+		      For rr As Integer = 0 To 3
+		        Dim src As Integer = ((c + rr) Mod 4) * 4 + rr
+		        t(c * 4 + rr) = sb.UInt8Value(s(src))
+		      Next
+		    Next
+		    If r < rounds Then
+		      // MixColumns
+		      For col As Integer = 0 To 3
+		        Dim b As Integer = col * 4
+		        Dim a0 As Integer = t(b)
+		        Dim a1 As Integer = t(b + 1)
+		        Dim a2 As Integer = t(b + 2)
+		        Dim a3 As Integer = t(b + 3)
+		        Dim x0 As Integer = AESXTime(a0)
+		        Dim x1 As Integer = AESXTime(a1)
+		        Dim x2 As Integer = AESXTime(a2)
+		        Dim x3 As Integer = AESXTime(a3)
+		        s(b) = Bitwise.BitXor(Bitwise.BitXor(x0, x1), Bitwise.BitXor(Bitwise.BitXor(a1, a2), a3))
+		        s(b + 1) = Bitwise.BitXor(Bitwise.BitXor(a0, x1), Bitwise.BitXor(Bitwise.BitXor(x2, a2), a3))
+		        s(b + 2) = Bitwise.BitXor(Bitwise.BitXor(a0, a1), Bitwise.BitXor(Bitwise.BitXor(x2, x3), a3))
+		        s(b + 3) = Bitwise.BitXor(Bitwise.BitXor(x0, a0), Bitwise.BitXor(Bitwise.BitXor(a1, a2), x3))
+		      Next
+		    Else
+		      For j As Integer = 0 To 15
+		        s(j) = t(j)
+		      Next
+		    End If
+		    // AddRoundKey
+		    Dim offset As Integer = r * 16
+		    For k As Integer = 0 To 15
+		      s(k) = Bitwise.BitXor(s(k), w.UInt8Value(offset + k))
+		    Next
+		  Next
+		  For n As Integer = 0 To 15
+		    blk.UInt8Value(n) = s(n)
+		  Next
+		  Return True
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Function AESExpandKey(key As MemoryBlock, ByRef rounds As Integer) As MemoryBlock
+		  // AES key schedule (FIPS-197 5.2) for a 16-, 24- or 32-byte key: rounds + 1 round keys of 16 bytes
+		  Dim sb As MemoryBlock = AESSBox()
+		  Dim nk As Integer = key.Size \ 4
+		  rounds = nk + 6
+		  Dim total As Integer = 4 * (rounds + 1)
+		  Dim w As New MemoryBlock(total * 4)
+		  For k As Integer = 0 To key.Size - 1
+		    w.UInt8Value(k) = key.UInt8Value(k)
+		  Next
+		  Dim rcon As Integer = 1
+		  For i As Integer = nk To total - 1
+		    Dim p As Integer = (i - 1) * 4
+		    Dim t0 As Integer = w.UInt8Value(p)
+		    Dim t1 As Integer = w.UInt8Value(p + 1)
+		    Dim t2 As Integer = w.UInt8Value(p + 2)
+		    Dim t3 As Integer = w.UInt8Value(p + 3)
+		    If i Mod nk = 0 Then
+		      // RotWord, SubWord, Rcon
+		      Dim saved As Integer = t0
+		      t0 = Bitwise.BitXor(sb.UInt8Value(t1), rcon)
+		      t1 = sb.UInt8Value(t2)
+		      t2 = sb.UInt8Value(t3)
+		      t3 = sb.UInt8Value(saved)
+		      rcon = AESXTime(rcon)
+		    ElseIf nk > 6 And i Mod nk = 4 Then
+		      // SubWord only (256-bit keys)
+		      t0 = sb.UInt8Value(t0)
+		      t1 = sb.UInt8Value(t1)
+		      t2 = sb.UInt8Value(t2)
+		      t3 = sb.UInt8Value(t3)
+		    End If
+		    Dim q As Integer = (i - nk) * 4
+		    Dim d As Integer = i * 4
+		    w.UInt8Value(d) = Bitwise.BitXor(w.UInt8Value(q), t0)
+		    w.UInt8Value(d + 1) = Bitwise.BitXor(w.UInt8Value(q + 1), t1)
+		    w.UInt8Value(d + 2) = Bitwise.BitXor(w.UInt8Value(q + 2), t2)
+		    w.UInt8Value(d + 3) = Bitwise.BitXor(w.UInt8Value(q + 3), t3)
+		  Next
+		  Return w
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Function AESSBox() As MemoryBlock
+		  // The AES S-box (FIPS-197 figure 7), made once
+		  If mAESSBox = Nil Then
+		    Dim sb As MemoryBlock = DecodeHex(kAESSBox)
+		    mAESSBox = sb
+		  End If
+		  Return mAESSBox
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Function AESXTime(x As Integer) As Integer
+		  // Multiplication by 2 in GF(2^8)
+		  Dim x2 As Integer = x * 2
+		  If x2 > 255 Then x2 = Bitwise.BitXor(x2, &h11B)
+		  Return x2
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function MeshAESXojoCheck() As String
+		  // MeshAESCTRXojo against the AES-128 and AES-256 known answers of MeshCryptoSelfTest and MeshAES256Check.
+		  // On desktop this checks the Android code path with the desktop compiler
+		  Dim iv As MemoryBlock = DecodeHex("8877665500000000fecaad0b00000000")
+		  Dim c128 As MemoryBlock = DecodeHex("3281cb865625d24ce295be2e632db2bee5ce42cc46193924a7c7cd32fddb378289dd4253bc6e39a6")
+		  Dim c256 As MemoryBlock = DecodeHex("219127b0bf340c93000c9693b9adf0b4048335400dbcf7e09a9fe39265809817ef2b9b3d25d1ea")
+		  Dim k128 As String = DecodeHex("d4f1bb3a20290759f0bcffabcf4e6901")
+		  Dim k256 As String = DecodeHex("202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f")
+		  Dim p128 As MemoryBlock = MeshAESCTRXojo(k128, c128, iv)
+		  Dim p256 As MemoryBlock = MeshAESCTRXojo(k256, c256, iv)
+		  If p128.Size <> c128.Size Or p256.Size <> c256.Size Then Return "Xojo AES FAILED (size)"
+		  Dim h128 As String = EncodeHex(p128.StringValue(0, p128.Size))
+		  Dim h256 As String = EncodeHex(p256.StringValue(0, p256.Size))
+		  If h128 <> "4D657368746173746963204145532D4354522073656C662D746573742C203320626C6F636B732121" Then Return "Xojo AES-128 FAILED"
+		  If h256 <> "4145532D323536204354522073656C662D746573742C20616C736F203320626C6F636B73212121" Then Return "Xojo AES-256 FAILED"
+		  Return "Xojo AES OK"
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function MeshAESCTRXojo(key As String, data As MemoryBlock, iv As MemoryBlock) As MemoryBlock
+		  // AES-CTR in plain Xojo, for Android, whose Crypto module has no AES. key: 16, 24 or 32 raw bytes; iv: the first
+		  // counter block, incremented as one 16-byte big-endian number like Crypto++ does. Checked by the same known-answer
+		  // tests as Crypto.AESDecrypt (MeshCryptoSelfTest, MeshAES256Check, MeshPKISelfTest). An empty MemoryBlock on bad input
+		  If data = Nil Or iv = Nil Then Return New MemoryBlock(0)
+		  If iv.Size < 16 Or data.Size = 0 Then Return New MemoryBlock(0)
+		  Dim raw As String = MeshBin(key)
+		  If raw.Bytes <> 16 And raw.Bytes <> 24 And raw.Bytes <> 32 Then Return New MemoryBlock(0)
+		  Dim kb As MemoryBlock = raw
+		  Dim rounds As Integer
+		  Dim w As MemoryBlock = AESExpandKey(kb, rounds)
+		  Dim n As Integer = data.Size
+		  Dim result As New MemoryBlock(n)
+		  Dim counter As New MemoryBlock(16)
+		  For i As Integer = 0 To 15
+		    counter.UInt8Value(i) = iv.UInt8Value(i)
+		  Next
+		  Dim blk As New MemoryBlock(16)
+		  Dim pos As Integer = 0
+		  While pos < n
+		    For j As Integer = 0 To 15
+		      blk.UInt8Value(j) = counter.UInt8Value(j)
+		    Next
+		    Call AESEncryptBlock(w, rounds, blk)
+		    Dim lastByte As Integer = Min(16, n - pos) - 1
+		    For k As Integer = 0 To lastByte
+		      result.UInt8Value(pos + k) = Bitwise.BitXor(data.UInt8Value(pos + k), blk.UInt8Value(k))
+		    Next
+		    pos = pos + 16
+		    For m As Integer = 15 DownTo 0
+		      Dim v As Integer = counter.UInt8Value(m) + 1
+		      If v < 256 Then
+		        counter.UInt8Value(m) = v
+		        Exit For
+		      End If
+		      counter.UInt8Value(m) = 0
+		    Next
+		  Wend
+		  Return result
+		End Function
+	#tag EndMethod
+
 	#tag Method, Flags = &h0
 		Function MeshAES256Check() As String
 		  // AES-256 known-answer test (openssl), for channels with 32-byte keys
@@ -21,25 +200,32 @@ Protected Module MeshCrypto
 		  // (the CTR mode is the one MeshCryptoSelfTest verified; no padding questions). Nil on failure
 		  Dim zeros As New MemoryBlock(16)
 		  Dim result As MemoryBlock = MeshAESCTR(MeshAESKeyForm(key), zeros, block)
-		  If result = Nil Or result.Size < 16 Then Return Nil
+		  If result = Nil Or result.Size < 16 Then Return New MemoryBlock(0) // not Nil: see MeshAESCTR
 		  Return result
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
 		Function MeshAESCTR(key As String, data As MemoryBlock, iv As MemoryBlock) As MemoryBlock
-		  // AES-CTR through Xojo's Crypto (Crypto++). Nil on failure
-		  Try
-		    Return Crypto.AESDecrypt(key, data, Crypto.BlockModes.CTR, iv)
-		  Catch err As RuntimeException
-		    Return Nil
-		  End Try
+		  // AES-CTR through Xojo's Crypto (Crypto++) on desktop, through MeshAESCTRXojo on Android (its Crypto has no AES).
+		  // Nil (desktop) or an empty MemoryBlock (Android) on failure: on Android a MemoryBlock function must never return
+		  // Nil, its result is converted and Nil throws
+		  #If TargetAndroid Then
+		    Return MeshAESCTRXojo(key, data, iv)
+		  #Else
+		    Try
+		      Return Crypto.AESDecrypt(key, data, Crypto.BlockModes.CTR, iv)
+		    Catch err As RuntimeException
+		      Return Nil
+		    End Try
+		  #EndIf
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
 		Function MeshAESKeyForm(key As String) As String
 		  // The key in the form Crypto.AESDecrypt wants, as found by MeshCryptoSelfTest
+		  key = MeshBin(key)
 		  If mAESKeyMode = 2 Then
 		    Dim lowerHex As String = EncodeHex(key)
 		    Return lowerHex.Lowercase
@@ -54,6 +240,9 @@ Protected Module MeshCrypto
 		Function MeshCCMDecrypt(key As String, nonce As String, cipherAndTag As String, ByRef plain As String) As Boolean
 		  // Inverse of MeshCCMEncrypt: decrypts, recomputes the tag and compares. False if the tag doesn't match
 		  plain = ""
+		  key = MeshBin(key)
+		  nonce = MeshBin(nonce)
+		  cipherAndTag = MeshBin(cipherAndTag)
 		  If cipherAndTag.Bytes < 8 Or nonce.Bytes <> 13 Then Return False
 		  Dim n As Integer = cipherAndTag.Bytes - 8
 		  Dim mb As MemoryBlock = ProtoRawBytes(cipherAndTag)
@@ -63,7 +252,8 @@ Protected Module MeshCrypto
 		    a.UInt8Value(0) = 1
 		    a.StringValue(1, 13) = ProtoRawBytes(nonce)
 		    a.UInt8Value(15) = 1
-		    Dim decrypted As MemoryBlock = MeshAESCTR(MeshAESKeyForm(key), mb.StringValue(0, n), a)
+		    Dim cipherPart As MemoryBlock = mb.StringValue(0, n) // a MemoryBlock variable: Android doesn't convert a String argument
+		    Dim decrypted As MemoryBlock = MeshAESCTR(MeshAESKeyForm(key), cipherPart, a)
 		    If decrypted = Nil Or decrypted.Size < n Then Return False
 		    candidate = decrypted.StringValue(0, n)
 		  End If
@@ -79,6 +269,9 @@ Protected Module MeshCrypto
 		Function MeshCCMEncrypt(key As String, nonce As String, plain As String) As String
 		  // AES-CCM as the firmware uses it for PKI (aes-ccm.cpp): 13-byte nonce, L = 2, 8-byte tag, no associated data.
 		  // Returns ciphertext + tag, "" on failure
+		  key = MeshBin(key)
+		  nonce = MeshBin(nonce)
+		  plain = MeshBin(plain)
 		  If nonce.Bytes <> 13 Or plain.Bytes > 65535 Then Return ""
 		  Dim n As Integer = plain.Bytes
 		  Dim p As New MemoryBlock(Max(n, 1))
@@ -90,14 +283,14 @@ Protected Module MeshCrypto
 		  b0.UInt8Value(14) = n \ 256
 		  b0.UInt8Value(15) = n Mod 256
 		  Dim x As MemoryBlock = MeshAESBlock(key, b0)
-		  If x = Nil Then Return ""
+		  If x = Nil Or x.Size < 16 Then Return ""
 		  Dim blockStart As Integer = 0
 		  While blockStart < n
 		    For i As Integer = 0 To 15
 		      If blockStart + i < n Then x.UInt8Value(i) = Bitwise.BitXor(x.UInt8Value(i), p.UInt8Value(blockStart + i))
 		    Next
 		    x = MeshAESBlock(key, x)
-		    If x = Nil Then Return ""
+		    If x = Nil Or x.Size < 16 Then Return ""
 		    blockStart = blockStart + 16
 		  Wend
 		  // Counter blocks A_i = flags (L' = 1) | nonce | i: S_0 masks the tag, S_1... encrypt the message
@@ -105,11 +298,12 @@ Protected Module MeshCrypto
 		  a.UInt8Value(0) = 1
 		  a.StringValue(1, 13) = ProtoRawBytes(nonce)
 		  Dim s0 As MemoryBlock = MeshAESBlock(key, a)
-		  If s0 = Nil Then Return ""
+		  If s0 = Nil Or s0.Size < 16 Then Return ""
 		  Dim cipher As String
 		  If n > 0 Then
 		    a.UInt8Value(15) = 1
-		    Dim encrypted As MemoryBlock = MeshAESCTR(MeshAESKeyForm(key), p.StringValue(0, n), a)
+		    Dim plainPart As MemoryBlock = p.StringValue(0, n) // a MemoryBlock variable: Android doesn't convert a String argument
+		    Dim encrypted As MemoryBlock = MeshAESCTR(MeshAESKeyForm(key), plainPart, a)
 		    If encrypted = Nil Or encrypted.Size < n Then Return ""
 		    cipher = encrypted.StringValue(0, n)
 		  End If
@@ -117,7 +311,7 @@ Protected Module MeshCrypto
 		  For t As Integer = 0 To 7
 		    tag.UInt8Value(t) = Bitwise.BitXor(x.UInt8Value(t), s0.UInt8Value(t))
 		  Next
-		  Return cipher + tag.StringValue(0, 8)
+		  Return MeshBin(cipher + tag.StringValue(0, 8))
 		End Function
 	#tag EndMethod
 
@@ -152,7 +346,11 @@ Protected Module MeshCrypto
 		      Dim got As String = EncodeHex(plain.StringValue(0, cipher.Size))
 		      If got = expectedHex Then
 		        mAESKeyMode = i + 1
-		        Return "AES-CTR self-test OK (" + names(i) + ", output " + plain.Size.ToString + " bytes), " + MeshAES256Check()
+		        #If TargetAndroid Then
+		          Return "AES-CTR self-test OK (" + names(i) + ", output " + plain.Size.ToString + " bytes), " + MeshAES256Check()
+		        #Else
+		          Return "AES-CTR self-test OK (" + names(i) + ", output " + plain.Size.ToString + " bytes), " + MeshAES256Check() + ", " + MeshAESXojoCheck()
+		        #EndIf
 		      End If
 		      details = details + " " + names(i) + ": wrong output;"
 		    End If
@@ -165,6 +363,8 @@ Protected Module MeshCrypto
 	#tag Method, Flags = &h0
 		Function MeshDecrypt(key As String, packetID As UInt32, fromNode As UInt32, cipher As String) As String
 		  // Meshtastic channel decryption: AES-CTR, counter block = packetID (LE, 8 bytes) + fromNode (LE, 4 bytes) + 4 zero bytes
+		  key = MeshBin(key)
+		  cipher = MeshBin(cipher)
 		  If key.Bytes = 0 Or cipher.Bytes = 0 Then Return ""
 		  If mAESKeyMode = 0 Then Call MeshCryptoSelfTest()
 		  If mAESKeyMode < 0 Then Return ""
@@ -199,7 +399,7 @@ Protected Module MeshCrypto
 		Sub MeshLearnPublicKey(nodeNum As UInt32, userPayload As String)
 		  // Remembers the public key (User field 8, 32 bytes) of a NodeInfo, keeping the first one seen like the firmware does
 		  If nodeNum = mPKINodeNum Then Return
-		  Dim mb As MemoryBlock = ProtoRawBytes(userPayload)
+		  Dim mb As MemoryBlock = ProtoRawBytes(MeshBin(userPayload))
 		  If mb = Nil Then Return
 		  Dim r As New ProtoReader(mb)
 		  Dim field, wireType As Integer
@@ -221,6 +421,7 @@ Protected Module MeshCrypto
 		Function MeshPKIDecrypt(privateKey As String, publicKey As String, packetID As UInt32, fromNode As UInt32, encrypted As String, ByRef data As String) As Boolean
 		  // Inverse of MeshPKIEncrypt (CryptoEngine::decryptCurve25519). False if keys or tag don't match
 		  data = ""
+		  encrypted = MeshBin(encrypted)
 		  If encrypted.Bytes < 12 Then Return False
 		  Dim key As String = MeshPKISharedKey(privateKey, publicKey)
 		  If key = "" Then Return False
@@ -242,7 +443,7 @@ Protected Module MeshCrypto
 		  Dim extra As New MemoryBlock(4)
 		  extra.LittleEndian = True
 		  extra.UInt32Value(0) = extraNonce
-		  Return sealed + extra.StringValue(0, 4)
+		  Return MeshBin(sealed + extra.StringValue(0, 4))
 		End Function
 	#tag EndMethod
 
@@ -312,7 +513,8 @@ Protected Module MeshCrypto
 		  Dim sealed As String = MeshPKIEncrypt(privA, pubB, &h13572468, &h00C0FFEE, &h0A0B0C0D, data)
 		  If EncodeHex(sealed) <> "1D7FB42D7FCE5A5AC139D21173904D22EC272A7EE539BF0D0C0B0A" Then failures.Add("PKI encryption")
 		  Dim back As String
-		  If Not MeshPKIDecrypt(DecodeHex("65666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f8081828384"), X25519PublicKey(privA), &h13572468, &h00C0FFEE, sealed, back) Or EncodeHex(back) <> EncodeHex(data) Then failures.Add("PKI decryption")
+		  Dim privB As String = DecodeHex("65666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f8081828384") // a String variable: DecodeHex gives a MemoryBlock on Android
+		  If Not MeshPKIDecrypt(privB, X25519PublicKey(privA), &h13572468, &h00C0FFEE, sealed, back) Or EncodeHex(back) <> EncodeHex(data) Then failures.Add("PKI decryption")
 		  If failures.Count = 0 Then Return "PKI self-test OK (X25519 RFC 7748, AES-256-CCM)"
 		  Return "PKI self-test FAILED: " + String.FromArray(failures, ", ")
 		End Function
@@ -378,6 +580,10 @@ Protected Module MeshCrypto
 
 
 	#tag Property, Flags = &h21
+		Private mAESSBox As MemoryBlock
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
 		Private mAESKeyMode As Integer
 	#tag EndProperty
 
@@ -400,6 +606,10 @@ Protected Module MeshCrypto
 	#tag Property, Flags = &h21
 		Private mPKIPublicKey As String
 	#tag EndProperty
+
+
+	#tag Constant, Name = kAESSBox, Type = String, Dynamic = False, Default = \"637c777bf26b6fc53001672bfed7ab76ca82c97dfa5947f0add4a2af9ca472c0b7fd9326363ff7cc34a5e5f171d8311504c723c31896059a071280e2eb27b27509832c1a1b6e5aa0523bd6b329e32f8453d100ed20fcb15b6acbbe394a4c58cfd0efaafb434d338545f9027f503c9fa851a3408f929d38f5bcb6da2110fff3d2cd0c13ec5f974417c4a77e3d645d197360814fdc222a908846eeb814de5e0bdbe0323a0a4906245cc2d3ac629195e479e7c8376d8dd54ea96c56f4ea657aae08ba78252e1ca6b4c6e8dd741f4bbd8b8a703eb5664803f60e613557b986c11d9ee1f8981169d98e949b1e87e9ce5528df8ca1890dbfe6426841992d0fb054bb16", Scope = Private
+	#tag EndConstant
 
 
 	#tag ViewBehavior

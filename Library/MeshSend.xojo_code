@@ -20,6 +20,7 @@ Protected Module MeshSend
 		  Dim key As String = MeshChannelKey(idx)
 		  Dim data As String = ProtoFieldVarint(1, portnum) + ProtoFieldBytes(2, payload)
 		  If requestID <> 0 Then data = data + ProtoFieldFixed32(6, requestID) // Data.request_id, e.g. in an ACK
+		  data = MeshBin(data)
 		  Dim packet As String = ProtoFieldFixed32(1, fromNode) + ProtoFieldFixed32(2, toNode)
 		  If key.Bytes > 0 Then
 		    Dim cipher As String = MeshDecrypt(key, packetID, fromNode, data) // AES-CTR: encrypting is the same operation
@@ -31,7 +32,7 @@ Protected Module MeshSend
 		  packet = packet + ProtoFieldFixed32(6, packetID) + ProtoFieldVarint(9, hopLimit)
 		  If wantAck Then packet = packet + ProtoFieldVarint(10, 1) // want_ack: the destination answers with a ROUTING ACK
 		  packet = packet + ProtoFieldVarint(15, hopLimit)
-		  envelope = ProtoFieldBytes(1, packet) + ProtoFieldBytes(2, channelName) + ProtoFieldBytes(3, gatewayID)
+		  envelope = MeshBin(ProtoFieldBytes(1, MeshBin(packet)) + ProtoFieldBytes(2, channelName) + ProtoFieldBytes(3, gatewayID))
 		  Return ""
 		End Function
 	#tag EndMethod
@@ -44,14 +45,14 @@ Protected Module MeshSend
 		  If Not MeshPKIReady() Or fromNode <> MeshPKINodeNum() Then Return "PKI needs our own node as sender and node.private_key in the configuration"
 		  Dim theirKey As String = MeshPublicKeyFor(toNode)
 		  If theirKey.Bytes <> 32 Then Return "no public key known for " + MeshNodeID(toNode)
-		  Dim data As String = ProtoFieldVarint(1, portnum) + ProtoFieldBytes(2, payload)
+		  Dim data As String = MeshBin(ProtoFieldVarint(1, portnum) + ProtoFieldBytes(2, payload))
 		  Dim sealed As String = MeshPKISeal(theirKey, packetID, fromNode, data)
 		  If sealed = "" Then Return "PKI encryption failed"
 		  Dim packet As String = ProtoFieldFixed32(1, fromNode) + ProtoFieldFixed32(2, toNode) + ProtoFieldBytes(5, sealed)
 		  packet = packet + ProtoFieldFixed32(6, packetID) + ProtoFieldVarint(9, hopLimit)
 		  If wantAck Then packet = packet + ProtoFieldVarint(10, 1)
 		  packet = packet + ProtoFieldVarint(15, hopLimit) + ProtoFieldVarint(17, 1)
-		  envelope = ProtoFieldBytes(1, packet) + ProtoFieldBytes(2, "PKI") + ProtoFieldBytes(3, gatewayID)
+		  envelope = MeshBin(ProtoFieldBytes(1, MeshBin(packet)) + ProtoFieldBytes(2, "PKI") + ProtoFieldBytes(3, gatewayID))
 		  Return ""
 		End Function
 	#tag EndMethod
@@ -157,7 +158,7 @@ Protected Module MeshSend
 		  Dim portnum As Integer
 		  Dim dataPayload As String
 		  Dim what As String
-		  If StrComp(msgType, "sendtext", 0) = 0 Then
+		  If MeshSameText(msgType, "sendtext") Then
 		    Dim text As String
 		    If json.HasKey("payload") Then
 		      Dim p As Variant = json.Value("payload")
@@ -175,7 +176,7 @@ Protected Module MeshSend
 		    portnum = 1
 		    dataPayload = text.ConvertEncoding(Encodings.UTF8)
 		    what = "text " + MeshTextSummary(dataPayload)
-		  ElseIf StrComp(msgType, "sendposition", 0) = 0 Then
+		  ElseIf MeshSameText(msgType, "sendposition") Then
 		    If Not json.HasKey("payload") Then
 		      info = "sendposition without payload"
 		      Return False
@@ -271,7 +272,7 @@ Protected Module MeshSend
 		  // User message for NODEINFO_APP: 1 id, 2 long_name, 3 short_name, 5 hw_model (255 = PRIVATE_HW), 8 public_key
 		  Dim user As String = ProtoFieldBytes(1, nodeID) + ProtoFieldBytes(2, longName) + ProtoFieldBytes(3, shortName) + ProtoFieldVarint(5, 255)
 		  If MeshPKIPublicKey().Bytes = 32 Then user = user + ProtoFieldBytes(8, MeshPKIPublicKey()) // public_key, so nodes can decrypt our DMs
-		  Return user
+		  Return MeshBin(user)
 		End Function
 	#tag EndMethod
 

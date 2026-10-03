@@ -17,9 +17,9 @@ Inherits SSLSocket
 	#tag Event
 		Sub DataAvailable()
 		  Dim s As String
-		  s = Me.ReadAll
+		  s = MeshBin(Me.ReadAll) // one byte per character on Android (see MeshBin)
 		  mLastReceived = NowSeconds() // for the keep-alive watchdog
-		  mRxBuffer = mRxBuffer + s
+		  mRxBuffer = MeshBin(mRxBuffer + s)
 		  RaiseEvent RawDataReceived(s) // every TCP read, e.g. for a hex dump
 		  
 		  Do
@@ -52,6 +52,18 @@ Inherits SSLSocket
 
 	#tag Event
 		Sub Error(err As RuntimeException)
+		  // The parameter is named err on desktop and e on Android (the framework's names are used there)
+		  #If TargetAndroid Then
+		    HandleSocketError(e)
+		  #Else
+		    HandleSocketError(err)
+		  #EndIf
+		End Sub
+	#tag EndEvent
+
+
+	#tag Method, Flags = &h21
+		Private Sub HandleSocketError(err As RuntimeException)
 		  StopKeepAlive()
 		  Dim wasConnected As Boolean = mConnectedMQTT
 		  mConnectedMQTT = False
@@ -70,8 +82,7 @@ Inherits SSLSocket
 		  If gaveUp Then RaiseEvent ReconnectFailed(reason)
 		  If Not retry Then FailPending("not delivered: " + reason)
 		End Sub
-	#tag EndEvent
-
+	#tag EndMethod
 
 	#tag Method, Flags = &h0
 		Sub Connect(host As String, brokerPort As Integer = 1883, clientID As String = "", keepAliveSeconds As Integer = 60, cleanSession As Boolean = True)
@@ -120,7 +131,11 @@ Inherits SSLSocket
 		  mPingTimer = New Timer
 		  mPingTimer.RunMode = Timer.RunModes.Off
 		  mPingTimer.Period = 1000
-		  AddHandler mPingTimer.Action, AddressOf PingTimerAction
+		  #If TargetAndroid Then
+		    AddHandler mPingTimer.Run, AddressOf PingTimerAction
+		  #Else
+		    AddHandler mPingTimer.Action, AddressOf PingTimerAction
+		  #EndIf
 		  
 		  mTLSType = SSLSocket.SSLConnectionTypes.TLSv12
 		  mReconnectMaxDelay = 60
@@ -128,7 +143,11 @@ Inherits SSLSocket
 		  mPendingPubs = New Dictionary
 		  mReconnectTimer = New Timer
 		  mReconnectTimer.RunMode = Timer.RunModes.Off
-		  AddHandler mReconnectTimer.Action, AddressOf ReconnectTimerAction
+		  #If TargetAndroid Then
+		    AddHandler mReconnectTimer.Run, AddressOf ReconnectTimerAction
+		  #Else
+		    AddHandler mReconnectTimer.Action, AddressOf ReconnectTimerAction
+		  #EndIf
 		End Sub
 	#tag EndMethod
 
@@ -158,7 +177,11 @@ Inherits SSLSocket
 		Sub Destructor()
 		  If mPingTimer <> Nil Then
 		    mPingTimer.RunMode = Timer.RunModes.Off
-		    RemoveHandler mPingTimer.Action, AddressOf PingTimerAction
+		    #If TargetAndroid Then
+		      RemoveHandler mPingTimer.Run, AddressOf PingTimerAction
+		    #Else
+		      RemoveHandler mPingTimer.Action, AddressOf PingTimerAction
+		    #EndIf
 		  End If
 		End Sub
 	#tag EndMethod
@@ -169,7 +192,7 @@ Inherits SSLSocket
 		  mWantConnected = False
 		  mReconnectTimer.RunMode = Timer.RunModes.Off
 		  If mConnectedMQTT Then
-		    Me.Write(String.ChrByte(&hE0) + String.ChrByte(0))
+		    SendRaw(String.ChrByte(&hE0) + String.ChrByte(0))
 		    mConnectedMQTT = False
 		  End If
 		  StopKeepAlive
@@ -201,20 +224,23 @@ Inherits SSLSocket
 		    If x > 0 Then encodedByte = encodedByte Or &h80
 		    result = result + String.ChrByte(encodedByte)
 		  Loop Until x = 0
-		  Return result
+		  Return MeshBin(result)
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
 		Function EncodeString(s As String) As String
 		  Dim raw As String = UTF8Bytes(s)
-		  Return EncodeUInt16(raw.Bytes) + raw
+		  Return MeshBin(EncodeUInt16(raw.Bytes) + raw)
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
 		Function EncodeUInt16(n As Integer) As String
-		  Return String.ChrByte(Bitwise.ShiftRight(n, 8) And &hFF) + String.ChrByte(n And &hFF)
+		  // The bytes in variables first: inside a ChrByte argument, Android translates And as a Boolean and
+		  Dim hi As Integer = Bitwise.ShiftRight(n, 8) And &hFF
+		  Dim lo As Integer = n And &hFF
+		  Return MeshBin(String.ChrByte(hi) + String.ChrByte(lo))
 		End Function
 	#tag EndMethod
 
@@ -329,7 +355,7 @@ Inherits SSLSocket
 		  Dim pos As Integer = 0
 		  Dim topicLen As Integer = Read16(body, pos)
 		  pos = pos + 2
-		  Dim topic As String = body.MiddleBytes(pos, topicLen).DefineEncoding(Encodings.UTF8)
+		  Dim topic As String = MeshUTF8Text(body.MiddleBytes(pos, topicLen))
 		  pos = pos + topicLen
 		  
 		  Dim packetID As Integer = 0
@@ -340,7 +366,12 @@ Inherits SSLSocket
 		  
 		  Dim payloadRaw As String = ""
 		  If pos < body.Bytes Then payloadRaw = body.MiddleBytes(pos, body.Bytes - pos)
-		  Dim payload As String = payloadRaw.DefineEncoding(Encodings.UTF8)
+		  #If TargetAndroid Then
+		    // Binary on Android (one byte per character, see MeshBin): MeshUTF8Text(payload) gives the text of a text payload
+		    Dim payload As String = payloadRaw
+		  #Else
+		    Dim payload As String = payloadRaw.DefineEncoding(Encodings.UTF8)
+		  #EndIf
 		  
 		  Select Case qos
 		  Case 1
@@ -446,10 +477,10 @@ Inherits SSLSocket
 		    RaiseEvent Trace("Not connected: publish to " + topic + " skipped")
 		    Return
 		  End If
-		  Dim body As String = EncodeString(topic) + UTF8Bytes(payload)
+		  Dim body As String = MeshBin(EncodeString(topic) + UTF8Bytes(payload))
 		  Dim firstByte As Integer = &h30
 		  If retain Then firstByte = firstByte Or &h01
-		  Me.Write(String.ChrByte(firstByte) + EncodeRemainingLength(body.Bytes) + body)
+		  SendRaw(String.ChrByte(firstByte) + EncodeRemainingLength(body.Bytes) + body)
 		End Sub
 	#tag EndMethod
 
@@ -468,12 +499,12 @@ Inherits SSLSocket
 		    packetID = NextPacketID()
 		    guard = guard + 1
 		  Wend
-		  Dim body As String = EncodeString(topic) + EncodeUInt16(packetID) + UTF8Bytes(payload)
+		  Dim body As String = MeshBin(EncodeString(topic) + EncodeUInt16(packetID) + UTF8Bytes(payload))
 		  Dim firstByte As Integer = &h32
 		  If retain Then firstByte = firstByte Or &h01
-		  mPendingPubs.Value(packetID) = String.ChrByte(firstByte) + body
+		  mPendingPubs.Value(packetID) = MeshBin(String.ChrByte(firstByte) + body)
 		  mPendingOrder.Add(packetID)
-		  Me.Write(String.ChrByte(firstByte) + EncodeRemainingLength(body.Bytes) + body)
+		  SendRaw(String.ChrByte(firstByte) + EncodeRemainingLength(body.Bytes) + body)
 		  Return packetID
 		End Function
 	#tag EndMethod
@@ -498,10 +529,10 @@ Inherits SSLSocket
 		  If mPendingOrder.Count = 0 Then Return
 		  RaiseEvent Trace("Resending " + Str(mPendingOrder.Count) + " unconfirmed message(s)")
 		  For Each packetID As Integer In mPendingOrder
-		    Dim stored As String = mPendingPubs.Value(packetID).StringValue
+		    Dim stored As String = MeshBin(mPendingPubs.Value(packetID).StringValue)
 		    Dim firstByte As Integer = stored.MiddleBytes(0, 1).AscByte Or &h08
 		    Dim body As String = stored.MiddleBytes(1, stored.Bytes - 1)
-		    Me.Write(String.ChrByte(firstByte) + EncodeRemainingLength(body.Bytes) + body)
+		    SendRaw(String.ChrByte(firstByte) + EncodeRemainingLength(body.Bytes) + body)
 		  Next
 		End Sub
 	#tag EndMethod
@@ -530,6 +561,13 @@ Inherits SSLSocket
 		End Function
 	#tag EndMethod
 
+	#tag Method, Flags = &h21
+		Private Sub SendRaw(s As String)
+		  // Every write to the socket: on Android the bytes go out one per character only when the String is tagged so (see MeshBin)
+		  Me.Write(MeshBin(s))
+		End Sub
+	#tag EndMethod
+
 	#tag Method, Flags = &h0
 		Sub SendConnectPacket()
 		  Dim connectFlags As Integer = 0
@@ -542,32 +580,32 @@ Inherits SSLSocket
 		  If mUsername <> "" Then payload = payload + EncodeString(mUsername)
 		  If mPassword <> "" Then payload = payload + EncodeString(mPassword)
 		  
-		  Dim body As String = variableHeader + payload
-		  Me.Write(String.ChrByte(&h10) + EncodeRemainingLength(body.Bytes) + body)
+		  Dim body As String = MeshBin(variableHeader + payload)
+		  SendRaw(String.ChrByte(&h10) + EncodeRemainingLength(body.Bytes) + body)
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
 		Sub SendPingReq()
-		  Me.Write(String.ChrByte(&hC0) + String.ChrByte(0))
+		  SendRaw(String.ChrByte(&hC0) + String.ChrByte(0))
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
 		Sub SendPubAck(packetID As Integer)
-		  Me.Write(String.ChrByte(&h40) + String.ChrByte(2) + EncodeUInt16(packetID))
+		  SendRaw(String.ChrByte(&h40) + String.ChrByte(2) + EncodeUInt16(packetID))
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
 		Sub SendPubComp(packetID As Integer)
-		  Me.Write(String.ChrByte(&h70) + String.ChrByte(2) + EncodeUInt16(packetID))
+		  SendRaw(String.ChrByte(&h70) + String.ChrByte(2) + EncodeUInt16(packetID))
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
 		Sub SendPubRec(packetID As Integer)
-		  Me.Write(String.ChrByte(&h50) + String.ChrByte(2) + EncodeUInt16(packetID))
+		  SendRaw(String.ChrByte(&h50) + String.ChrByte(2) + EncodeUInt16(packetID))
 		End Sub
 	#tag EndMethod
 
@@ -621,8 +659,9 @@ Inherits SSLSocket
 	#tag Method, Flags = &h0
 		Function Subscribe(topic As String, qos As Integer = 0) As Integer
 		  Dim packetID As Integer = NextPacketID
-		  Dim payload As String = EncodeUInt16(packetID) + EncodeString(topic) + String.ChrByte(qos And 3)
-		  Me.Write(String.ChrByte(&h82) + EncodeRemainingLength(payload.Bytes) + payload)
+		  Dim qosBits As Integer = qos And 3 // in a variable: inside a ChrByte argument, Android translates And as a Boolean and
+		  Dim payload As String = MeshBin(EncodeUInt16(packetID) + EncodeString(topic) + String.ChrByte(qosBits))
+		  SendRaw(String.ChrByte(&h82) + EncodeRemainingLength(payload.Bytes) + payload)
 		  Return packetID
 		End Function
 	#tag EndMethod
@@ -630,14 +669,20 @@ Inherits SSLSocket
 	#tag Method, Flags = &h0
 		Function Unsubscribe(topic As String) As Integer
 		  Dim packetID As Integer = NextPacketID
-		  Dim payload As String = EncodeUInt16(packetID) + EncodeString(topic)
-		  Me.Write(String.ChrByte(&hA2) + EncodeRemainingLength(payload.Bytes) + payload)
+		  Dim payload As String = MeshBin(EncodeUInt16(packetID) + EncodeString(topic))
+		  SendRaw(String.ChrByte(&hA2) + EncodeRemainingLength(payload.Bytes) + payload)
 		  Return packetID
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
 		Function UTF8Bytes(s As String) As String
+		  #If TargetAndroid Then
+		    // Text becomes its UTF-8 bytes, binary (see MeshBin) stays as it is: the MemoryBlock conversion follows the tag
+		    If s.Bytes = 0 Then Return ""
+		    Dim mb As MemoryBlock = s
+		    Return mb.StringValue(0, mb.Size)
+		  #EndIf
 		  Dim t As String = s
 		  If t.Encoding <> Nil And t.Encoding <> Encodings.UTF8 Then
 		    t = t.ConvertEncoding(Encodings.UTF8)

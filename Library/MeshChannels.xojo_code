@@ -39,6 +39,7 @@ Protected Module MeshChannels
 		      h = Bitwise.BitXor(h, nameMB.UInt8Value(i))
 		    Next
 		  End If
+		  key = MeshBin(key)
 		  If key.Bytes > 0 Then
 		    Dim keyMB As MemoryBlock = key
 		    For j As Integer = 0 To keyMB.Size - 1
@@ -53,7 +54,7 @@ Protected Module MeshChannels
 		Function MeshChannelIndex(name As String) As Integer
 		  // Exact (case-sensitive) match, as channel names are compared in the firmware
 		  For i As Integer = 0 To mChannelNames.LastIndex
-		    If StrComp(mChannelNames(i), name, 0) = 0 Then Return i
+		    If MeshSameText(mChannelNames(i), name) Then Return i
 		  Next
 		  Return -1
 		End Function
@@ -133,7 +134,7 @@ Protected Module MeshChannels
 		  For pass As Integer = 1 To 3
 		    For i As Integer = 0 To mChannelNames.LastIndex
 		      If mChannelKeys(i).Bytes = 0 Or order.IndexOf(i) >= 0 Then Continue
-		      Dim nameMatch As Boolean = (StrComp(mChannelNames(i), channelID, 0) = 0)
+		      Dim nameMatch As Boolean = (MeshSameText(mChannelNames(i), channelID))
 		      Dim hashMatch As Boolean = (MeshChannelHash(mChannelNames(i), mChannelKeys(i)) = channelHash)
 		      If (pass = 1 And nameMatch And hashMatch) Or (pass = 2 And nameMatch) Or (pass = 3 And hashMatch) Then order.Add(i)
 		    Next
@@ -171,6 +172,7 @@ Protected Module MeshChannels
 		  // The AES key for a PSK, as the firmware expands it (Channels::getKey):
 		  // 0 bytes = no encryption, 1 byte = default key with the last byte + (index - 1) (index 0 = no encryption),
 		  // 16/32 bytes = AES-128/256 key, shorter keys padded with zeros to 16 or 32 bytes
+		  psk = MeshBin(psk)
 		  Select Case psk.Bytes
 		  Case 0
 		    Return ""
@@ -199,8 +201,8 @@ Protected Module MeshChannels
 		  pskBytes = ""
 		  Dim s As String = psk.Trim
 		  If s = "" Or s = "none" Then Return True // case-insensitive, like the converter
-		  If StrComp(s, "default", 0) = 0 Or s = "1" Then
-		    pskBytes = String.ChrByte(1)
+		  If MeshSameText(s, "default") Or s = "1" Then
+		    pskBytes = MeshBin(String.ChrByte(1))
 		    Return True
 		  End If
 		  If s.BeginsWith("base64:") Then Return MeshDecodeBase64Strict(s.Middle(7), pskBytes)
