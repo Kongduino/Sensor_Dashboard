@@ -162,6 +162,10 @@ Protected Module Module1
 		  End If
 		  // Source types (the table is created with 1 and 2; 3 is added to older databases too)
 		  MySensordb.ExecuteSQL("INSERT OR IGNORE INTO logtypes(id, typeName) VALUES (3, 'Meshtastic device');")
+		  // GPS positions of Meshtastic nodes (MQTT feeds and devices), for the Map tabs
+		  MySensordb.ExecuteSQL("CREATE TABLE IF NOT EXISTS positions(posID INTEGER PRIMARY KEY, sessionID INTEGER, " + _
+		  "timestamp INTEGER, fromID INTEGER, senderID INTEGER, latitude REAL, longitude REAL, altitude INTEGER, " + _
+		  "precisionBits INTEGER, sats INTEGER);")
 		  
 		  Dim dt As DateTime = DateTime.Now()
 		  Dim cmd As String
@@ -556,6 +560,60 @@ Protected Module Module1
 		    #Pragma Unused w
 		  #EndIf
 		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Sub LogPosition(fromID As Int64, senderID As Int64, ts As Integer, lat As Double, lon As Double, alt As Integer, precision As Integer, sats As Integer)
+		  // One position in the positions table (fromID: the node, senderID: the gateway or connected node)
+		  Dim cmd As String = "INSERT INTO positions(sessionID, timestamp, fromID, senderID, latitude, longitude, altitude, precisionBits, sats) VALUES (" + _
+		  Str(MySessionNum) + ", " + Str(ts) + ", " + Format(fromID, "0") + ", " + Format(senderID, "0") + ", " + _
+		  Format(lat, "-0.0000000") + ", " + Format(lon, "-0.0000000") + ", " + Str(alt) + ", " + Str(precision) + ", " + Str(sats) + ");"
+		  LogEvents "LogPosition", cmd
+		  Try
+		    MySensordb.ExecuteSQL(cmd)
+		  Catch e As DatabaseException
+		    LogEvents "LogPosition", "Database error: " + e.Message
+		  End Try
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function ParsePosition(js As JSONItem, ByRef ts As Integer, ByRef lat As Double, ByRef lon As Double, ByRef alt As Integer, ByRef precision As Integer, ByRef sats As Integer) As Boolean
+		  // A "position" packet as converter JSON (payload: latitude_i / longitude_i in 1e-7 degrees, altitude, time,
+		  // precision_bits, sats_in_view). False when it holds no valid fix (0 / 0, or out of range)
+		  If js.Lookup("type", "").StringValue <> "position" Then Return False
+		  Dim payload As JSONItem = js.Lookup("payload", Nil)
+		  If payload = Nil Then Return False
+		  Dim latI As Int64 = payload.Lookup("latitude_i", 0).Int64Value
+		  Dim lonI As Int64 = payload.Lookup("longitude_i", 0).Int64Value
+		  If latI = 0 And lonI = 0 Then Return False // no fix
+		  lat = latI / 1e7
+		  lon = lonI / 1e7
+		  If Abs(lat) > 90 Or Abs(lon) > 180 Then Return False
+		  alt = payload.Lookup("altitude", 0).IntegerValue
+		  precision = payload.Lookup("precision_bits", 32).IntegerValue
+		  sats = payload.Lookup("sats_in_view", 0).IntegerValue
+		  // The fix's own time when the node has one, else when the packet was received, else now
+		  ts = payload.Lookup("time", 0).IntegerValue
+		  If ts <= 0 Then ts = js.Lookup("timestamp", 0).IntegerValue
+		  If ts <= 0 Then ts = DateTime.Now.SecondsFrom1970
+		  Return True
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function PositionRows(fromID As Int64) As RowSet
+		  // The node's latest stored positions (every session, at most PositionTrack.kMaxPositions), oldest first;
+		  // a position stored twice (the same time) comes once
+		  Dim cmd As String = "select * from (select timestamp, latitude, longitude, altitude, precisionBits, sats from positions " + _
+		  "where fromID=" + Format(fromID, "0") + " group by timestamp order by timestamp desc limit 500) order by timestamp;"
+		  Try
+		    Return MySensordb.SelectSQL(cmd)
+		  Catch e As DatabaseException
+		    LogEvents "PositionRows", "Database error: " + e.Message
+		    Return Nil
+		  End Try
+		End Function
 	#tag EndMethod
 
 

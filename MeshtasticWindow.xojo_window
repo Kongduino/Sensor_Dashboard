@@ -442,6 +442,10 @@ End
 		    LogSource("Bad JSON: " + e.Message)
 		    Return
 		  End Try
+		  If js.Lookup("type", "?").StringValue = "position" Then
+		    HandlePosition(js)
+		    Return
+		  End If
 		  If js.Lookup("type", "?").StringValue <> "telemetry" Then Return
 		  Dim payload As JSONItem = js.Lookup("payload", Nil)
 		  If payload = Nil Or Not payload.HasKey("temperature") Then Return // device metrics, not the sensor
@@ -595,6 +599,35 @@ End
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
+		Private Sub HandlePosition(js As JSONItem)
+		  // A node's GPS position: stored for any node (once per node and time, as the device replays the last
+		  // packets at each connection), added to the track when it is the charted node
+		  Dim ts, alt, precision, sats As Integer
+		  Dim lat, lon As Double
+		  If Not ParsePosition(js, ts, lat, lon, alt, precision, sats) Then Return // no fix
+		  Dim fromNum As UInt32 = js.Lookup("from", 0).UInt64Value
+		  If mLastStoredPos = Nil Then mLastStoredPos = New Dictionary
+		  Dim key As String = Str(fromNum)
+		  If ts > mLastStoredPos.Lookup(key, 0).IntegerValue Then
+		    mLastStoredPos.Value(key) = ts
+		    LogPosition(fromNum, mMyNum, ts, lat, lon, alt, precision, sats)
+		  End If
+		  If fromNum = mChartNode Then
+		    Track.Add(ts, lat, lon, alt, precision, sats)
+		    LogSource("Position of " + NodeLabel(fromNum) + ": " + Track.Summary)
+		  End If
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function Track() As PositionTrack
+		  // The followed node's positions (the Map tab)
+		  If mTrack = Nil Then mTrack = New PositionTrack
+		  Return mTrack
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
 		Private Sub ClearCharts()
 		  // Empties the sample arrays in place (the charts hold references to them)
 		  dhtLabels.RemoveAll
@@ -668,6 +701,9 @@ End
 		  RHChart.Refresh()
 		  HPaChart.Refresh()
 		  LogSource("History of " + NodeLabel(mChartNode) + ": " + Str(n) + " earlier reading(s) loaded")
+		  Track.Clear
+		  Dim nPos As Integer = Track.LoadHistory(mChartNode)
+		  LogSource("Positions of " + NodeLabel(mChartNode) + ": " + Str(nPos) + " stored, " + Track.Summary)
 		End Sub
 	#tag EndMethod
 
@@ -921,6 +957,14 @@ End
 
 	#tag Property, Flags = &h21
 		Private mChartNode As UInt32
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mLastStoredPos As Dictionary
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mTrack As PositionTrack
 	#tag EndProperty
 
 	#tag Property, Flags = &h21

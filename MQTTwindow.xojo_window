@@ -426,6 +426,10 @@ End
 		  
 		  Dim type As String
 		  type = js.Lookup("type", "?")
+		  If type = "position" Then
+		    HandlePosition(js)
+		    Return
+		  End If
 		  If type = "telemetry" Then
 		    // A feed of one node: the other nodes' readings are left out
 		    If mNodeFilter <> 0 And js.Lookup("from", 0).UInt64Value <> mNodeFilter Then Return
@@ -489,7 +493,44 @@ End
 		  Wend
 		  mLoadingHistory = False
 		  LogEvents "MQTTwindow", "History: " + Str(n) + " earlier reading(s) loaded"
+		  Track.Clear
+		  Dim nPos As Integer = Track.LoadHistory(PositionNode)
+		  LogEvents "MQTTwindow", "Positions: " + Str(nPos) + " stored, " + Track.Summary
 		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Sub HandlePosition(js As JSONItem)
+		  // The followed node's GPS position (the Node field, or the gateway itself without one): stored once per
+		  // time, and added to the track. Other nodes' positions are left out
+		  Dim ts, alt, precision, sats As Integer
+		  Dim lat, lon As Double
+		  If Not ParsePosition(js, ts, lat, lon, alt, precision, sats) Then Return // no fix
+		  Dim fromNum As UInt32 = js.Lookup("from", 0).UInt64Value
+		  If fromNum <> PositionNode Then Return
+		  If ts <= mLastPositionTime Then Return // already stored
+		  mLastPositionTime = ts
+		  Dim gatewayNum As Int64 = Val("&H" + mFeedID)
+		  LogPosition(fromNum, gatewayNum, ts, lat, lon, alt, precision, sats)
+		  Track.Add(ts, lat, lon, alt, precision, sats)
+		  LogEvents "MQTTwindow", "Position: " + Track.Summary
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function PositionNode() As UInt32
+		  // Whose positions this feed tracks: its node, or the gateway itself when no node is set
+		  If mNodeFilter <> 0 Then Return mNodeFilter
+		  Return Val("&H" + mFeedID)
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function Track() As PositionTrack
+		  // The followed node's positions (the Map tab)
+		  If mTrack = Nil Then mTrack = New PositionTrack
+		  Return mTrack
+		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
@@ -679,6 +720,14 @@ End
 
 	#tag Property, Flags = &h21
 		Private mFeedID As String
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mLastPositionTime As Integer
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mTrack As PositionTrack
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
