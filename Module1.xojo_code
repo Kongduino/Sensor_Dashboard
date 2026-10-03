@@ -98,9 +98,19 @@ Protected Module Module1
 		  MyFolder = SpecialFolder.ApplicationData.Child("Sensor_Dashboard")
 		  If Not MyFolder.Exists Then MyFolder.CreateFolder()
 		  MySensordbFI = MyFolder.Child("records.sqlite")
-		  // One-time move: bring over a database still in /tmp/Sensor_Dashboard
-		  Dim oldDB As New FolderItem("/tmp/Sensor_Dashboard/records.sqlite", FolderItem.PathModes.Native)
-		  If Not MySensordbFI.Exists And oldDB.Exists Then
+		  // One-time move: bring over a database still in /tmp/Sensor_Dashboard (versions before October 2026).
+		  // Only when that folder exists: on Linux and Windows, New FolderItem raises an exception for a path
+		  // whose folder doesn't exist
+		  Dim oldDB As FolderItem
+		  If Not MySensordbFI.Exists Then
+		    Try
+		      Dim oldFolder As New FolderItem("/tmp/Sensor_Dashboard", FolderItem.PathModes.Native)
+		      If oldFolder.Exists And oldFolder.IsFolder Then oldDB = oldFolder.Child("records.sqlite")
+		    Catch eOld As RuntimeException
+		      oldDB = Nil // no such folder, or no /tmp (Windows)
+		    End Try
+		  End If
+		  If oldDB <> Nil And oldDB.Exists Then
 		    Try
 		      oldDB.CopyTo(MyFolder)
 		      LogEvents "SetupSensorFolder", "Database copied from " + oldDB.NativePath + " to " + MySensordbFI.NativePath
