@@ -142,7 +142,10 @@ Protected Class ChartPainter
 		  // Y axis: round ticks covering the data (bars start at 0)
 		  Dim lo, hi As Double
 		  DataRange(lo, hi)
-		  Dim stepSize As Double = NiceStep((hi - lo) / 5)
+		  // About 5 ticks, fewer when the plot is short (a phone): at least kMinTickSpacing points between two labels
+		  Dim plotHeight As Double = (h - 34) - 76
+		  Dim tickCount As Integer = Max(2, Min(5, Floor(plotHeight / kMinTickSpacing)))
+		  Dim stepSize As Double = NiceStep((hi - lo) / tickCount)
 		  Dim first As Double = Floor(lo / stepSize) * stepSize
 		  Dim last As Double = Ceiling(hi / stepSize) * stepSize
 		  If last - first < stepSize Then last = first + stepSize
@@ -512,6 +515,10 @@ Protected Class ChartPainter
 	#tag Property, Flags = &h21
 		Private mValueFormat As String = "0.0"
 	#tag EndProperty
+
+
+	#tag Constant, Name = kMinTickSpacing, Type = Double, Dynamic = False, Default = \"28", Scope = Private
+	#tag EndConstant
 
 
 	#tag ViewBehavior
