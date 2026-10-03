@@ -365,6 +365,12 @@ End
 
 #tag WindowCode
 	#tag Event
+		Sub Opening()
+		  FitControlsForLinux(Self) // taller controls on Linux
+		End Sub
+	#tag EndEvent
+
+	#tag Event
 		Sub Closing()
 		  DataAcquisitionTimer.RunMode = Timer.RunModes.Off
 		  If mConnection <> Nil Then

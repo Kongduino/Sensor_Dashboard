@@ -1267,6 +1267,7 @@ End
 
 	#tag Event
 		Sub Opening()
+		  FitControlsForLinux(Self) // taller controls on Linux
 		  // The fields as last used (settings file outside the project, see SettingsFile)
 		  LoadSetupFields
 		End Sub
@@ -1673,18 +1674,6 @@ End
 		End Function
 	#tag EndEvent
 #tag EndEvents
-#tag Events tfMQTTNodeFilter
-	#tag Event
-		Sub KeyUp(key As String)
-		  If Key = Chr(13) And btAddMQTT.Enabled Then btAddMQTT.Press()
-		End Sub
-	#tag EndEvent
-	#tag Event
-		Function KeyDown(key As String) As Boolean
-		  If Key = Chr(13) Then Return True
-		End Function
-	#tag EndEvent
-#tag EndEvents
 #tag Events tfMQTTKeys
 	#tag Event
 		Sub KeyUp(key As String)
@@ -1721,6 +1710,18 @@ End
 		    Me.Caption = "Hide"
 		  End If
 		End Sub
+	#tag EndEvent
+#tag EndEvents
+#tag Events tfMQTTNodeFilter
+	#tag Event
+		Sub KeyUp(key As String)
+		  If Key = Chr(13) And btAddMQTT.Enabled Then btAddMQTT.Press()
+		End Sub
+	#tag EndEvent
+	#tag Event
+		Function KeyDown(key As String) As Boolean
+		  If Key = Chr(13) Then Return True
+		End Function
 	#tag EndEvent
 #tag EndEvents
 #tag Events tpConnectionTypes

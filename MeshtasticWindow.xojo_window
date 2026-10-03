@@ -375,6 +375,12 @@ End
 
 #tag WindowCode
 	#tag Event
+		Sub Opening()
+		  FitControlsForLinux(Self) // taller controls on Linux
+		End Sub
+	#tag EndEvent
+
+	#tag Event
 		Sub Closing()
 		  If mTimeout <> Nil Then mTimeout.RunMode = Timer.RunModes.Off
 		  If mRetry <> Nil Then mRetry.RunMode = Timer.RunModes.Off

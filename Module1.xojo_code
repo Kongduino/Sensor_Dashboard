@@ -530,6 +530,34 @@ Protected Module Module1
 		End Function
 	#tag EndMethod
 
+	#tag Method, Flags = &h0
+		Sub FitControlsForLinux(w As DesktopWindow)
+		  // Linux (GTK) draws text fields, menus and buttons taller than the macOS sizes the windows are laid out
+		  // with, and cuts their text otherwise: there, each one is made at least kLinuxFieldHeight high (labels and
+		  // checkboxes kLinuxLabelHeight), growing evenly up and down so rows stay aligned. Nothing changes elsewhere
+		  #If TargetLinux Then
+		    For i As Integer = 0 To w.ControlCount - 1
+		      Dim c As Object = w.ControlAt(i)
+		      If c IsA DesktopUIControl Then
+		        Dim u As DesktopUIControl = DesktopUIControl(c)
+		        Dim target As Integer
+		        If u IsA DesktopTextField Or u IsA DesktopPopupMenu Or u IsA DesktopComboBox Or u IsA DesktopButton Then
+		          target = kLinuxFieldHeight
+		        ElseIf u IsA DesktopCheckBox Or u IsA DesktopLabel Then
+		          target = kLinuxLabelHeight
+		        End If
+		        If target > u.Height Then
+		          u.Top = u.Top - (target - u.Height) \ 2
+		          u.Height = target
+		        End If
+		      End If
+		    Next
+		  #Else
+		    #Pragma Unused w
+		  #EndIf
+		End Sub
+	#tag EndMethod
+
 
 	#tag Property, Flags = &h0
 		DataSources As Dictionary
@@ -573,6 +601,13 @@ Protected Module Module1
 
 
 	#tag Constant, Name = kSqliteCommand, Type = String, Dynamic = False, Default = \"CREATE TABLE telemetry(hitID INTEGER PRIMARY KEY\x2C logType INTEGER\x2C sessionID INTEGER\x2C timestamp INTEGER\x2C fromID INTEGER\x2C senderID INTEGER\x2C rssi INTEGER\x2C snr REAL\x2C payload TEXT);\nCREATE TABLE sessions(sessionID INTEGER PRIMARY KEY\x2C fullID TEXT NOT NULL UNIQUE\x2C timestamp TEXT);\nCREATE TABLE logtypes(id INTEGER PRIMARY KEY\x2C typeName TEXT NOT NULL UNIQUE);\nINSERT INTO logtypes(id\x2C typeName) VALUES (1\x2C \'M5 AQI\');\nINSERT INTO logtypes(id\x2C typeName) VALUES (2\x2C \'Meshtastic MQTT\');", Scope = Public
+	#tag EndConstant
+
+
+	#tag Constant, Name = kLinuxFieldHeight, Type = Double, Dynamic = False, Default = \"30", Scope = Private
+	#tag EndConstant
+
+	#tag Constant, Name = kLinuxLabelHeight, Type = Double, Dynamic = False, Default = \"26", Scope = Private
 	#tag EndConstant
 
 

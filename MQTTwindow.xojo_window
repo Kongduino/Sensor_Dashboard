@@ -380,6 +380,12 @@ End
 
 #tag WindowCode
 	#tag Event
+		Sub Opening()
+		  FitControlsForLinux(Self) // taller controls on Linux
+		End Sub
+	#tag EndEvent
+
+	#tag Event
 		Sub Closing()
 		  // Closing the window ends the feed (the Python process used to end with its Shell)
 		  MQTTClient1.Disconnect
