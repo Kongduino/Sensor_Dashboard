@@ -22,7 +22,7 @@ Begin DesktopWindow SetupWindow
    MinimumWidth    =   738
    Resizeable      =   True
    Title           =   "Setup"
-   Type            =   1
+   Type            =   0
    Visible         =   True
    Width           =   738
    Begin DesktopListBox lbDataSources
@@ -1259,6 +1259,24 @@ End
 #tag EndDesktopWindow
 
 #tag WindowCode
+	#tag Event
+		Function CancelClosing(appQuitting As Boolean) As Boolean
+		  // Closing the Data Sources window quits the app, after a confirmation. Quitting the app (Cmd-Q, menu)
+		  // doesn't ask: appQuitting is True then
+		  If appQuitting Then Return False
+		  Dim d As New MessageDialog
+		  d.Message = "Quit Sensor Dashboard?"
+		  d.Explanation = "This closes the app and every source: MQTT feeds, AQI devices and Meshtastic connections."
+		  d.ActionButton.Caption = "Quit"
+		  d.CancelButton.Visible = True
+		  Dim b As MessageDialogButton = d.ShowModal(Self)
+		  If b = d.CancelButton Then Return True // keep everything running
+		  LogEvents "SetupWindow", "Closed by the user: quitting"
+		  Quit
+		  Return False
+		End Function
+	#tag EndEvent
+
 	#tag Event
 		Sub Closing()
 		  SaveSetupFields
