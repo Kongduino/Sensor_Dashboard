@@ -142,7 +142,7 @@ Begin DesktopWindow SetupWindow
       Top             =   84
       Transparent     =   False
       Underline       =   False
-      Value           =   0
+      Value           =   1
       Visible         =   True
       Width           =   386
       Begin DesktopLabel Label3
@@ -1255,6 +1255,31 @@ Begin DesktopWindow SetupWindow
       Scope           =   0
       TabPanelIndex   =   0
    End
+   Begin DesktopCanvas Canvas1
+      AllowAutoDeactivate=   True
+      AllowFocus      =   False
+      AllowFocusRing  =   True
+      AllowTabs       =   False
+      Backdrop        =   0
+      Enabled         =   True
+      Height          =   96
+      Index           =   -2147483648
+      Left            =   642
+      LockBottom      =   False
+      LockedInPosition=   False
+      LockLeft        =   False
+      LockRight       =   True
+      LockTop         =   True
+      Scope           =   0
+      TabIndex        =   6
+      TabPanelIndex   =   0
+      TabStop         =   True
+      Tooltip         =   ""
+      Top             =   0
+      Transparent     =   False
+      Visible         =   True
+      Width           =   96
+   End
 End
 #tag EndDesktopWindow
 
@@ -1818,6 +1843,18 @@ End
 		  
 		  Self.Left = Self.Left + ShakeDirection
 		  ShakeDirection = ShakeDirection * -1
+		End Sub
+	#tag EndEvent
+#tag EndEvents
+#tag Events Canvas1
+	#tag Event
+		Sub Opening()
+		  Dim p As New Picture(96, 96)
+		  p.Graphics.DrawPicture greenlogo, 16, 16, 64, 64, _
+		  0, 0, greenlogo.Width, greenlogo.Height
+		  
+		  me.Backdrop = p
+		  me.Refresh()
 		End Sub
 	#tag EndEvent
 #tag EndEvents
