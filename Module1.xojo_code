@@ -83,21 +83,20 @@ Protected Module Module1
 
 	#tag Method, Flags = &h0
 		Sub ExportMQTT(w As MQTTwindow)
-		  // Exports this window's feed: the session's MQTT rows (logType 2) from its gateway, to
+		  // Exports this window's feed: every stored MQTT row (logType 2, all sessions) from its gateway, to
 		  // Session_<id>/MQTT_<gateway>.csv (see WriteTelemetryCSV) plus the four charts as PNG
-		  Dim cond As String = " AND logType=2 AND senderID=" + Format(Val("&H" + w.FeedID), "0")
+		  Dim nodeArg As Int64 = -1
 		  Dim fileName As String = w.FeedID
 		  If w.NodeFilterNum <> 0 Then // a feed of one node: its readings only, named node_via_gateway
-		    cond = cond + " AND fromID=" + Format(w.NodeFilterNum, "0")
+		    nodeArg = NodeNumber(w.NodeFilterNum)
 		    Dim h As String = "00000000" + Hex(w.NodeFilterNum)
 		    fileName = h.RightBytes(8).Lowercase + "_via_" + w.FeedID
 		  End If
-		  Dim cmd As String = "select * from telemetry where sessionID=" + Str(MySessionNum) + cond + " ORDER BY timestamp;"
-		  LogEvents "ExportMQTT", cmd
-		  Dim rs As RowSet = MySensordb.SelectSQL(cmd)
+		  Dim rs As RowSet = TelemetryRows(2, nodeArg, HexValue(w.FeedID))
+		  If rs = Nil Then Return
 		  If rs.RowCount = 0 And w.Track.Count = 0 Then
 		    LogEvents "ExportMQTT", "Nothing to export yet for " + "!" + w.FeedID
-		    MessageBox "Nothing to export yet for " + "!" + w.FeedID + ": no telemetry or position received in this session."
+		    MessageBox "Nothing to export yet for " + "!" + w.FeedID + ": no telemetry or position stored."
 		    Return
 		  End If
 		  
@@ -131,15 +130,13 @@ Protected Module Module1
 
 	#tag Method, Flags = &h0
 		Sub ExportAQI(w As M5AQIwindow)
-		  // Exports this window's device: the session's AQI rows (logType 1) of the device, to
+		  // Exports this window's device: every stored AQI row (logType 1, all sessions) of the device, to
 		  // Session_<id>/AQI_<device>.csv (see WriteTelemetryCSV) plus the five charts as PNG
-		  Dim cmd As String = "select * from telemetry where sessionID=" + Str(MySessionNum) + _
-		  " AND logType=1 AND fromID=" + Format(Val("&H" + w.MyID), "0") + " ORDER BY timestamp;"
-		  LogEvents "ExportAQI", cmd
-		  Dim rs As RowSet = MySensordb.SelectSQL(cmd)
+		  Dim rs As RowSet = TelemetryRows(1, HexValue(w.MyID), -1)
+		  If rs = Nil Then Return
 		  If rs.RowCount = 0 Then
 		    LogEvents "ExportAQI", "Nothing to export yet for " + w.MyID
-		    MessageBox "Nothing to export yet for " + w.MyID + ": no reading received in this session."
+		    MessageBox "Nothing to export yet for " + w.MyID + ": no reading stored."
 		    Return
 		  End If
 		  
@@ -166,15 +163,13 @@ Protected Module Module1
 
 	#tag Method, Flags = &h0
 		Sub ExportDevice(w As MeshtasticWindow)
-		  // Exports this window's node: the session's rows of logType 3 (Meshtastic device) of the node, to
+		  // Exports this window's node: every stored row of logType 3 (Meshtastic device, all sessions) of the node, to
 		  // Session_<id>/DEV_<node>.csv (see WriteTelemetryCSV) plus the three charts as PNG
-		  Dim cmd As String = "select * from telemetry where sessionID=" + Str(MySessionNum) + _
-		  " AND logType=3 AND fromID=" + Format(Val("&H" + w.FeedID), "0") + " ORDER BY timestamp;"
-		  LogEvents "ExportDevice", cmd
-		  Dim rs As RowSet = MySensordb.SelectSQL(cmd)
+		  Dim rs As RowSet = TelemetryRows(3, HexValue(w.FeedID), -1)
+		  If rs = Nil Then Return
 		  If rs.RowCount = 0 And w.Track.Count = 0 Then
 		    LogEvents "ExportDevice", "Nothing to export yet for " + "!" + w.FeedID
-		    MessageBox "Nothing to export yet for " + "!" + w.FeedID + ": no sensor reading or position received in this session."
+		    MessageBox "Nothing to export yet for " + "!" + w.FeedID + ": no sensor reading or position stored."
 		    Return
 		  End If
 		  

@@ -118,7 +118,7 @@ Only one window per node: a node has a single queue towards its clients, so two 
 - Charts keep the last 100 samples of each source. **A window opens with history:** the source's latest stored readings, from earlier sessions too (the same gateway and node, device or node), and live readings continue from there.
 - **Every sensor reading is stored** in SQLite (`records.sqlite`, table `telemetry`) with its source type, session, time, node or device ID and the full payload as JSON. Source types: `1` M5 AQI, `2` Meshtastic MQTT, `3` Meshtastic device. For the two Meshtastic sources, only environment telemetry counts as a reading: device metrics (battery, voltage, channel use) are neither charted nor stored, so an MQTT window's RSSI / SNR chart shows the radio values of the sensor packets.
 - Each run of the app is a **session**, with its own folder `Session_<id>/` holding `Event_Log.txt`, a log of everything the app did: connections, every packet received, every value charted.
-- **Export Data** (right-click a source) writes that source's readings for the current session, plus its charts as PNG, into the session folder:
+- **Export Data** (right-click a source) writes every stored reading of that source (earlier sessions included, once per time), plus its charts as PNG, into the session folder:
 
 | Source | Files |
 |---|---|
@@ -135,7 +135,7 @@ All three exports write the same kind of CSV: `;` as separator, one row per read
 | M5Stack AQI | `timestamp`, `device` (its 12-digit ID), then one column per value (`sen55_temperature`, `scd40_co2`…) |
 | Meshtastic device | `timestamp`, `node`, then one column per value |
 
-The value columns cover every key that appears in the session's readings, so a reading that lacks one, or a packet without radio values, leaves an empty cell.
+The value columns cover every key that appears in the exported readings, so a reading that lacks one, or a packet without radio values, leaves an empty cell.
 
 ## Where things are kept
 
@@ -182,7 +182,6 @@ LICENSE                         GPL-3.0
 - An MQTT feed without a node set charts the readings of every node its gateway uploads in the same window: set **Node** to follow one.
 - All MQTT feeds share one table of channel keys: two feeds that give the same channel name different keys overwrite each other.
 - The RSSI / SNR chart stays empty for a gateway's own telemetry: a node doesn't measure the signal of its own packets.
-- Export Data covers the current session only, while the charts also show earlier readings.
 
 ## License
 
