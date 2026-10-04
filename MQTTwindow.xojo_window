@@ -513,12 +513,17 @@ End
 		      temp = payload.Lookup("temperature", -255).DoubleValue
 		      rh = payload.Lookup("relative_humidity", -255).DoubleValue
 		      pa = payload.Lookup("barometric_pressure", -255).DoubleValue
-		      updateData(rssi, snr, temp, rh, pa, TS)
+		      // Stored as received, with the hops; charted only for a packet the gateway heard directly (see IsDirect)
+		      Dim hops, hopStart, relayNode As Integer
+		      Dim viaMQTT As Boolean
+		      MeshLastPacketRadio(hops, hopStart, relayNode, viaMQTT)
+		      Dim direct As Boolean = IsDirect(hops, viaMQTT)
+		      updateData(If(direct, rssi, -255), If(direct, snr, -255), temp, rh, pa, TS)
 		      TempChart.Refresh()
 		      RHChart.Refresh()
 		      HPaChart.Refresh()
 		      SNRSSIchart.Refresh()
-		      LogTelemetry(2, fromID, senderID, Str(TS), payload.ToString, rssi, snr, MySessionNum)
+		      LogTelemetry(2, fromID, senderID, Str(TS), payload.ToString, rssi, snr, MySessionNum, hops, hopStart, relayNode, viaMQTT)
 		    End If
 		  End If
 		  
@@ -574,8 +579,11 @@ End
 		  // The radio values of this packet as the gateway / connected node received it (none for its own)
 		  Dim rssi As Integer = js.Lookup("rssi", -255).IntegerValue
 		  Dim snr As Double = js.Lookup("snr", -255).DoubleValue
-		  LogPosition(fromNum, gatewayNum, ts, lat, lon, alt, precision, sats, rssi, snr)
-		  Track.Add(ts, lat, lon, alt, precision, sats, rssi, snr)
+		  Dim hops, hopStart, relayNode As Integer
+		  Dim viaMQTT As Boolean
+		  MeshLastPacketRadio(hops, hopStart, relayNode, viaMQTT) // how this packet reached the gateway / node
+		  LogPosition(fromNum, gatewayNum, ts, lat, lon, alt, precision, sats, rssi, snr, hops, hopStart, relayNode, viaMQTT)
+		  Track.Add(ts, lat, lon, alt, precision, sats, rssi, snr, hops, viaMQTT)
 		  LogEvents "MQTTwindow", "Position: " + Track.Summary
 		  UpdateMap
 		End Sub

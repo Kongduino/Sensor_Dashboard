@@ -519,7 +519,12 @@ End
 		  If mLastStored = Nil Then mLastStored = New Dictionary
 		  If TS > mLastStored.Lookup(key, 0).IntegerValue Then
 		    mLastStored.Value(key) = TS
-		    LogTelemetry(3, Format(fromNum, "0"), Format(mMyNum, "0"), Str(TS), payload.ToString, -255, -255, MySessionNum)
+		    // With the radio values and hops of the packet as the connected node received it (none for its own)
+		    Dim hops, hopStart, relayNode As Integer
+		    Dim viaMQTT As Boolean
+		    MeshLastPacketRadio(hops, hopStart, relayNode, viaMQTT) // how this packet reached the gateway / node
+		    LogTelemetry(3, Format(fromNum, "0"), Format(mMyNum, "0"), Str(TS), payload.ToString, _
+		    js.Lookup("rssi", -255).DoubleValue, js.Lookup("snr", -255).DoubleValue, MySessionNum, hops, hopStart, relayNode, viaMQTT)
 		  End If
 		  
 		  If fromNum <> mChartNode Then Return
@@ -668,14 +673,17 @@ End
 		  // The radio values of this packet as the gateway / connected node received it (none for its own)
 		  Dim rssi As Integer = js.Lookup("rssi", -255).IntegerValue
 		  Dim snr As Double = js.Lookup("snr", -255).DoubleValue
+		  Dim hops, hopStart, relayNode As Integer
+		  Dim viaMQTT As Boolean
+		  MeshLastPacketRadio(hops, hopStart, relayNode, viaMQTT) // how this packet reached the gateway / node
 		  If mLastStoredPos = Nil Then mLastStoredPos = New Dictionary
 		  Dim key As String = Str(fromNum)
 		  If ts > mLastStoredPos.Lookup(key, 0).IntegerValue Then
 		    mLastStoredPos.Value(key) = ts
-		    LogPosition(fromNum, mMyNum, ts, lat, lon, alt, precision, sats, rssi, snr)
+		    LogPosition(fromNum, mMyNum, ts, lat, lon, alt, precision, sats, rssi, snr, hops, hopStart, relayNode, viaMQTT)
 		  End If
 		  If fromNum = mChartNode Then
-		    Track.Add(ts, lat, lon, alt, precision, sats, rssi, snr)
+		    Track.Add(ts, lat, lon, alt, precision, sats, rssi, snr, hops, viaMQTT)
 		    LogSource("Position of " + NodeLabel(fromNum) + ": " + Track.Summary)
 		    UpdateMap
 		    If mRequested = fromNum And mRequestedPosition Then
