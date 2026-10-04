@@ -94,7 +94,13 @@ Protected Class ChartPainter
 		  Dim p As New Picture(w * 2, h * 2)
 		  p.Graphics.ScaleX = 2
 		  p.Graphics.ScaleY = 2
+		  // Android: GraphicsPath shapes ignore Graphics.ScaleX / ScaleY (dots, lines and text don't), so in an export at
+		  // twice the size the paths get their coordinates scaled by hand (mPathScale); 1 everywhere else
+		  #If TargetAndroid Then
+		    mPathScale = 2
+		  #EndIf
 		  DrawChart(p.Graphics, w, h)
+		  mPathScale = 1
 		  Return p
 		End Function
 	#tag EndMethod
@@ -302,26 +308,26 @@ Protected Class ChartPainter
 		    Dim x As Double = XForIndex(i)
 		    Dim y As Double = YForValue(s.Values(i))
 		    If i = 0 Then
-		      line.MoveToPoint(x, y)
-		      area.MoveToPoint(x, mPlotBottom)
+		      line.MoveToPoint(x * mPathScale, y * mPathScale)
+		      area.MoveToPoint(x * mPathScale, mPlotBottom * mPathScale)
 		    Else
-		      line.AddLineToPoint(x, y)
+		      line.AddLineToPoint(x * mPathScale, y * mPathScale)
 		    End If
-		    area.AddLineToPoint(x, y)
+		    area.AddLineToPoint(x * mPathScale, y * mPathScale)
 		  Next
-		  area.AddLineToPoint(XForIndex(s.Values.LastIndex), mPlotBottom)
+		  area.AddLineToPoint(XForIndex(s.Values.LastIndex) * mPathScale, mPlotBottom * mPathScale)
 		  
 		  If s.Filled And s.Values.Count > 1 Then
 		    Dim stops() As Pair
 		    stops.Add 0.0 : Color.RGB(c.Red, c.Green, c.Blue, 150)
 		    stops.Add 1.0 : Color.RGB(c.Red, c.Green, c.Blue, 245)
-		    g.Brush = New LinearGradientBrush(New Point(0, mPlotTop), New Point(0, mPlotBottom), stops)
+		    g.Brush = New LinearGradientBrush(New Point(0, mPlotTop * mPathScale), New Point(0, mPlotBottom * mPathScale), stops)
 		    g.FillPath(area)
 		    g.Brush = Nil
 		  End If
 		  
 		  g.DrawingColor = c
-		  g.PenSize = 2
+		  g.PenSize = 2 * mPathScale
 		  If s.Values.Count > 1 Then g.DrawPath(line)
 		  g.PenSize = 1
 		  
@@ -470,6 +476,10 @@ Protected Class ChartPainter
 
 	#tag Property, Flags = &h0
 		Title As String
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mPathScale As Double = 1
 	#tag EndProperty
 
 	#tag Property, Flags = &h21

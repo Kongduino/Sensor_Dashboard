@@ -243,7 +243,13 @@ Protected Class MapPainter
 		  Dim saved As Integer = mHover
 		  mHover = -1
 		  mExporting = True // no buttons in the picture
+		  // Android: GraphicsPath shapes ignore Graphics.ScaleX / ScaleY (dots, lines and text don't), so in an export at
+		  // twice the size the paths get their coordinates scaled by hand (mPathScale); 1 everywhere else
+		  #If TargetAndroid Then
+		    mPathScale = 2
+		  #EndIf
 		  DrawMap(p.Graphics, w, h)
+		  mPathScale = 1
 		  mExporting = False
 		  mHover = saved
 		  Return p
@@ -439,12 +445,12 @@ Protected Class MapPainter
 		    // The track, in time order
 		    If Track.Count() > 1 Then
 		      Dim path As New GraphicsPath
-		      path.MoveToPoint(ScreenX(Track.Lons(0)), ScreenY(Track.Lats(0)))
+		      path.MoveToPoint(ScreenX(Track.Lons(0)) * mPathScale, ScreenY(Track.Lats(0)) * mPathScale)
 		      For i As Integer = 1 To Track.Count() - 1
-		        path.AddLineToPoint(ScreenX(Track.Lons(i)), ScreenY(Track.Lats(i)))
+		        path.AddLineToPoint(ScreenX(Track.Lons(i)) * mPathScale, ScreenY(Track.Lats(i)) * mPathScale)
 		      Next
 		      g.DrawingColor = Color.RGB(c.Red, c.Green, c.Blue, 60)
-		      g.PenSize = 3
+		      g.PenSize = 3 * mPathScale
 		      g.DrawPath(path)
 		      g.PenSize = 1
 		    End If
@@ -565,6 +571,10 @@ Protected Class MapPainter
 
 	#tag Property, Flags = &h0
 		Track As PositionTrack
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mPathScale As Double = 1
 	#tag EndProperty
 
 	#tag Property, Flags = &h21

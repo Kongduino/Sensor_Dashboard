@@ -9,6 +9,71 @@ Protected Module SensorData
 
 
 	#tag Method, Flags = &h0
+		Function HexText(num As UInt64, digits As Integer) As String
+		  // num as digits uppercase hex digits (the lowest ones). On Android, Hex() keeps only 32 bits (an M5Stack id has 48)
+		  Dim hexDigits As String = "0123456789ABCDEF"
+		  Dim v As UInt64 = num
+		  Dim t As String
+		  For i As Integer = 1 To digits
+		    Dim d As Integer = v Mod 16
+		    t = hexDigits.Middle(d, 1) + t
+		    v = v \ 16
+		  Next
+		  Return t
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function HexValue(text As String) As UInt64
+		  // Hex digits as a number, with an optional "!", "&H" or "0x" in front (node ids, M5Stack device ids). On Android,
+		  // Val("&H…") gives 0: this parses the digits itself (stopping at the first non-hex character)
+		  Dim t As String = text.Trim
+		  If t.Left(1) = "!" Then t = t.Middle(1)
+		  Dim lead As String = t.Left(2).Lowercase
+		  If lead = "&h" Or lead = "0x" Then t = t.Middle(2)
+		  Dim lower As String = t.Lowercase
+		  Dim hexDigits As String = "0123456789abcdef"
+		  Dim v As UInt64 = 0
+		  For i As Integer = 0 To lower.Length - 1
+		    Dim d As Integer = hexDigits.IndexOf(lower.Middle(i, 1))
+		    If d < 0 Then Return v
+		    v = v * 16 + d
+		  Next
+		  Return v
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function TelemetryRows(logType As Integer, fromID As Int64, senderID As Int64) As RowSet
+		  // Every stored reading of a source (all sessions), oldest first, with all columns (for WriteTelemetryCSV).
+		  // fromID / senderID of -1 match any
+		  Dim cond As String = "logType=" + Str(logType)
+		  If fromID >= 0 Then cond = cond + " AND fromID=" + Format(fromID, "0")
+		  If senderID >= 0 Then cond = cond + " AND senderID=" + Format(senderID, "0")
+		  Try
+		    Return MySensordb.SelectSQL("select * from telemetry where " + cond + " group by timestamp order by timestamp;") // once per time: a restart stores the current reading again
+		  Catch e As DatabaseException
+		    LogEvents("TelemetryRows", "Database error: " + e.Message)
+		    Return Nil
+		  End Try
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function ChildObject(js As JSONItem, key As String, ByRef child As JSONItem) As Boolean
+		  // The JSON object under key, if there is one. Use this rather than Dim x As JSONItem = js.Lookup(key, Nil): on Android,
+		  // putting a missing or null value into a JSONItem raises a NilObjectException, and any other value an IllegalCastException
+		  child = Nil
+		  If js = Nil Then Return False
+		  If Not js.HasKey(key) Then Return False
+		  Dim v As Variant = js.Value(key)
+		  If Not (v IsA JSONItem) Then Return False // null, a number, a string...
+		  child = v
+		  Return True
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Function OpenDatabase(dbFile As FolderItem, ByRef problem As String) As Boolean
 		  // Opens records.sqlite (dbFile), creating it with the schema kSqliteCommand when it doesn't exist, then brings
 		  // an older database up to date. False, with problem set, when it can't be used
@@ -184,8 +249,8 @@ Protected Module SensorData
 		  // A "position" packet as converter JSON (payload: latitude_i / longitude_i in 1e-7 degrees, altitude, time,
 		  // precision_bits, sats_in_view). False when it holds no valid fix (0 / 0, or out of range)
 		  If js.Lookup("type", "").StringValue <> "position" Then Return False
-		  Dim payload As JSONItem = js.Lookup("payload", Nil)
-		  If payload = Nil Then Return False
+		  Dim payload As JSONItem
+		  If Not ChildObject(js, "payload", payload) Then Return False
 		  Dim latI As Int64 = payload.Lookup("latitude_i", 0).Int64Value
 		  Dim lonI As Int64 = payload.Lookup("longitude_i", 0).Int64Value
 		  If latI = 0 And lonI = 0 Then Return False // no fix
@@ -212,14 +277,21 @@ Protected Module SensorData
 		  Dim js As JSONItem
 		  Try
 		    js = New JSONItem(content)
-		  Catch e As JSONException
+		  Catch e As RuntimeException
 		    problem = "the answer is not JSON (" + e.Message + ")"
 		    Return False
 		  End Try
 		  
-		  Dim data As JSONItem = js.Lookup("data", Nil)
-		  If data = Nil Then
-		    problem = "no 'data' node (code " + js.Lookup("code", "?").StringValue + ", " + js.Lookup("msg", "").StringValue + ")"
+		  // An error answer has "data": null (e.g. code 500 when M5Stack's own database is down)
+		  Dim data As JSONItem
+		  If Not ChildObject(js, "data", data) Then
+		    // The server's message can be a whole Java stack trace: the log gets all of it, the problem only its start
+		    Dim msg As String = js.Lookup("msg", "").StringValue
+		    LogEvents("ParseAQIResponse", "No data, code " + js.Lookup("code", "?").StringValue + ": " + msg)
+		    Dim oneLine As String = msg.ReplaceLineEndings(" ")
+		    Dim shortMsg As String = oneLine.Trim
+		    If shortMsg.Length > 60 Then shortMsg = shortMsg.Left(60) + "…"
+		    problem = "server error (code " + js.Lookup("code", "?").StringValue + ")" + If(shortMsg <> "", ": " + shortMsg, "")
 		    Return False
 		  End If
 		  
@@ -230,7 +302,7 @@ Protected Module SensorData
 		  ElseIf v.Type = Variant.TypeString Then
 		    values = DecodeAQIValue(v.StringValue)
 		  End If
-		  If values = Nil Then
+		  If values = Nil Or values.Count = 0 Then
 		    problem = "no readable 'value' node"
 		    Return False
 		  End If
@@ -241,13 +313,12 @@ Protected Module SensorData
 		    Return False
 		  End If
 		  
-		  Dim profile As JSONItem = values.Lookup("profile", Nil)
-		  Dim rtc As JSONItem = values.Lookup("rtc", Nil)
-		  If profile = Nil Or rtc = Nil Then
+		  Dim profile, rtc As JSONItem
+		  If Not ChildObject(values, "profile", profile) Or Not ChildObject(values, "rtc", rtc) Then
 		    problem = "no 'profile' or 'rtc' node"
 		    Return False
 		  End If
-		  If values.Lookup("sen55", Nil) = Nil Or values.Lookup("scd40", Nil) = Nil Then
+		  If Not (values.HasKey("sen55") And values.HasKey("scd40")) Then
 		    problem = "no 'sen55' or 'scd40' node"
 		    Return False
 		  End If
@@ -273,25 +344,47 @@ Protected Module SensorData
 	#tag Method, Flags = &h0
 		Function DecodeAQIValue(value As String) As JSONItem
 		  // data.value is a JSON object written as a string, possibly escaped once more ({\"sen55\":...}).
-		  // Same three tries as parse_escaped_json in the former AirQ_json_parse.py. Nil if none works
-		  Try
-		    Return New JSONItem(value)
-		  Catch e1 As JSONException
-		  End Try
+		  // Same tries as parse_escaped_json in the former AirQ_json_parse.py. An empty JSONItem if none works
+		  // The M5Stack's usual form is escaped ({\"sen55\":...}): then the unescaping comes first, so a normal reading
+		  // raises no exception (the debugger stops on every one, even when caught)
+		  Dim escaped As Boolean = value.IndexOf("\""") >= 0
+		  If Not escaped Then
+		    Try
+		      Return New JSONItem(value)
+		    Catch e1 As RuntimeException
+		    End Try
+		  End If
+		  
+		  // Escaped: unescaping the quotes is enough for the M5Stack's answers (tried first: reading the text out of a one-element
+		  // JSON array, below, raises an IllegalCastException on Android)
+		  If escaped Then
+		    Try
+		      Return New JSONItem(value.ReplaceAll("\""", """"))
+		    Catch e0 As RuntimeException
+		    End Try
+		  End If
 		  
 		  // Unescape one layer: read the text as the content of a JSON string
 		  Try
 		    Dim wrapper As New JSONItem("[""" + value + """]")
 		    Return New JSONItem(wrapper.ValueAt(0).StringValue)
-		  Catch e2 As JSONException
+		  Catch e2 As RuntimeException
 		  End Try
+		  
+		  // Escaped text that the unescaping didn't help: as it is
+		  If escaped Then
+		    Try
+		      Return New JSONItem(value)
+		    Catch e4 As RuntimeException
+		    End Try
+		  End If
 		  
 		  // Last resort: only unescape the quotes
 		  Try
 		    Return New JSONItem(value.ReplaceAll("\""", """"))
-		  Catch e3 As JSONException
+		  Catch e3 As RuntimeException
 		  End Try
-		  Return Nil
+		  Return New JSONItem // empty, not Nil: on Android a Nil JSONItem result raises an exception in the caller
 		End Function
 	#tag EndMethod
 
@@ -473,7 +566,7 @@ Protected Module SensorData
 		  // The payload of the current row (stored with ' for "), an empty object if it can't be read
 		  Try
 		    Return New JSONItem(rs.Column("payload").StringValue.ReplaceAllBytes("'", """"))
-		  Catch e As JSONException
+		  Catch e As RuntimeException
 		    Return New JSONItem
 		  End Try
 		End Function
@@ -482,13 +575,9 @@ Protected Module SensorData
 	#tag Method, Flags = &h21
 		Private Function SourceID(num As Int64, kind As String) As String
 		  // "node": !aabbccdd (8 lowercase hex digits); "device": an M5Stack id, 12 uppercase hex digits
-		  Dim h As String
-		  If kind = "device" Then
-		    h = "000000000000" + Hex(num)
-		    Return h.RightBytes(12).Uppercase
-		  End If
-		  h = "00000000" + Hex(num)
-		  Return "!" + h.RightBytes(8).Lowercase
+		  If kind = "device" Then Return HexText(num, 12)
+		  Dim h As String = HexText(num, 8)
+		  Return "!" + h.Lowercase
 		End Function
 	#tag EndMethod
 
