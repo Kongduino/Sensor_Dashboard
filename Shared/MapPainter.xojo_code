@@ -17,14 +17,16 @@ Protected Class MapPainter
 		  If CacheFolder = Nil Then Return Nil
 		  Dim parts() As String = key.Split("/")
 		  Try
+		    // Each folder is checked before going into it: on Android, Child of a folder that doesn't exist raises an exception
+		    Dim names() As String = Array("tiles", parts(0), parts(1))
 		    Dim f As FolderItem = CacheFolder
-		    If create And Not f.Exists Then f.CreateFolder()
-		    f = f.Child("tiles")
-		    If create And Not f.Exists Then f.CreateFolder()
-		    f = f.Child(parts(0))
-		    If create And Not f.Exists Then f.CreateFolder()
-		    f = f.Child(parts(1))
-		    If create And Not f.Exists Then f.CreateFolder()
+		    For level As Integer = 0 To names.LastIndex + 1
+		      If Not f.Exists Then
+		        If Not create Then Return Nil
+		        f.CreateFolder()
+		      End If
+		      If level <= names.LastIndex Then f = f.Child(names(level))
+		    Next
 		    Return f.Child(parts(2) + ".png")
 		  Catch e As RuntimeException
 		    Return Nil
