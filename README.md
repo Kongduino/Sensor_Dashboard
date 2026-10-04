@@ -10,6 +10,8 @@ A desktop dashboard, written entirely in Xojo, that follows environment sensors 
 
 There are no plugins, no Python and no external tools. The Meshtastic parts use the [MQTT_Xojo](https://github.com/Kongduino/MQTT_Xojo) library, which is included in `Library/`.
 
+There's also an [Android version](#android-version), for phones and tablets.
+
 ## Screenshots
 
 A Meshtastic node's own BME680, followed over its TCP connection. The window opened with the readings stored since the day before (dated labels), and live ones continue from there. At the top, the latest values, and the filter field and menu to chart another node, with **Request now**; under each chart, min / avg / max. The value under the mouse shows in a box, and samples sit at their real time, so the overnight gap keeps its width.
@@ -39,6 +41,7 @@ The same node followed over MQTT, through the broker its gateway uploads to, wit
 - [Charts, data and export](#charts-data-and-export)
 - [Where things are kept](#where-things-are-kept)
 - [Repository layout](#repository-layout)
+- [Android version](#android-version)
 - [Limitations](#limitations)
 - [License](#license)
 
@@ -168,6 +171,10 @@ LICENSE                         GPL-3.0
 
 `Library/` is kept identical to MQTT_Xojo's. Fixes to the library go there first, then are copied here.
 `Shared/` holds no window or control code, so that the Android version can use the same files.
+
+## Android version
+
+[Sensor_Dashboard_Android](https://github.com/Kongduino/Sensor_Dashboard_Android) is the same dashboard for Android phones and tablets, also in Xojo: the three sources (MQTT feed, a Meshtastic node over TCP, M5Stack AQI) as cards with on/off switches, the same charts and map, and sharing of the readings, positions and charts through Android's share sheet. It uses the same `Shared/` and `Library/` code and the same icon. It has no USB connection to a node (Xojo for Android has no serial port), and it collects data only while it's on screen.
 
 ## Limitations
 
