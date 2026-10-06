@@ -254,7 +254,7 @@ Protected Module SensorData
 		  Dim cmd As String = "INSERT INTO rangetest(sessionID, timestamp, gatewayID, deviceID, direction, status, method, packetID, seq, label, " + _
 		  "rssi, snr, hops, hopStart, relayNode, viaMQTT, latitude, longitude, altitude, posSource) VALUES (" + _
 		  Str(MySessionNum) + ", " + Format(DateTime.Now().SecondsFrom1970, "0") + ", " + Format(gatewayID, "0") + ", " + Format(deviceID, "0") + ", " + _
-		  Str(direction) + ", " + SQLText(status) + ", " + SQLText(method) + ", " + Format(packetID, "0") + ", " + Str(seq) + ", " + SQLText(label) + ", " + _
+		  Str(direction) + ", " + SQLText(status) + ", " + SQLText(method) + ", " + Format(NodeNumber(packetID), "0") + ", " + Str(seq) + ", " + SQLText(label) + ", " + _
 		  Str(rssi) + ", " + FormatValue(snr, "-0.00") + ", " + HopsSQL(hops, hopStart, relayNode, viaMQTT) + ", " + position + ", " + SQLText(posSource) + ");"
 		  LogEvents "LogRange", cmd
 		  Try

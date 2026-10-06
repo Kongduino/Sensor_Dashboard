@@ -54,6 +54,22 @@ Protected Class RangeSpots
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
+		Sub RemoveAt(i As Integer)
+		  // Drops a spot (a test message the gateway never transmitted)
+		  If i < 0 Or i > Times.LastIndex Then Return
+		  Times.RemoveAt(i)
+		  Lats.RemoveAt(i)
+		  Lons.RemoveAt(i)
+		  Kinds.RemoveAt(i)
+		  Rssis.RemoveAt(i)
+		  Snrs.RemoveAt(i)
+		  Hops.RemoveAt(i)
+		  PacketIDs.RemoveAt(i)
+		  Labels.RemoveAt(i)
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Function Count() As Integer
 		  Return Times.Count
 		End Function
@@ -89,7 +105,7 @@ Protected Class RangeSpots
 		  // The spot of a packet (a sent test message), -1 if none
 		  If packetID = 0 Then Return -1
 		  For i As Integer = PacketIDs.LastIndex DownTo 0
-		    If PacketIDs(i) = packetID Then Return i
+		    If NodeNumber(PacketIDs(i)) = NodeNumber(packetID) Then Return i // see NodeNumber: Android sign extension
 		  Next
 		  Return -1
 		End Function
