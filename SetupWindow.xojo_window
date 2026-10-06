@@ -11,20 +11,20 @@ Begin DesktopWindow SetupWindow
    HasMaximizeButton=   True
    HasMinimizeButton=   True
    HasTitleBar     =   True
-   Height          =   408
+   Height          =   432
    ImplicitInstance=   True
    MacProcID       =   0
-   MaximumHeight   =   344
-   MaximumWidth    =   738
+   MaximumHeight   =   432
+   MaximumWidth    =   806
    MenuBar         =   1248274431
    MenuBarVisible  =   False
-   MinimumHeight   =   344
-   MinimumWidth    =   738
+   MinimumHeight   =   432
+   MinimumWidth    =   806
    Resizeable      =   True
    Title           =   "Setup"
    Type            =   0
    Visible         =   True
-   Width           =   738
+   Width           =   806
    Begin DesktopListBox lbDataSources
       AllowAutoDeactivate=   True
       AllowAutoHideScrollbars=   True
@@ -48,7 +48,7 @@ Begin DesktopWindow SetupWindow
       HasHorizontalScrollbar=   False
       HasVerticalScrollbar=   True
       HeadingIndex    =   -1
-      Height          =   336
+      Height          =   360
       Index           =   -2147483648
       InitialValue    =   "Type	Source"
       Italic          =   False
@@ -121,7 +121,7 @@ Begin DesktopWindow SetupWindow
       FontName        =   "System"
       FontSize        =   0.0
       FontUnit        =   0
-      Height          =   304
+      Height          =   328
       Index           =   -2147483648
       InitialParent   =   ""
       Italic          =   False
@@ -142,9 +142,9 @@ Begin DesktopWindow SetupWindow
       Top             =   84
       Transparent     =   False
       Underline       =   False
-      Value           =   1
+      Value           =   0
       Visible         =   True
-      Width           =   386
+      Width           =   454
       Begin DesktopLabel Label3
          AllowAutoDeactivate=   True
          Bold            =   False
@@ -172,7 +172,7 @@ Begin DesktopWindow SetupWindow
          TextAlignment   =   0
          TextColor       =   &c000000
          Tooltip         =   ""
-         Top             =   122
+         Top             =   154
          Transparent     =   False
          Underline       =   False
          Visible         =   True
@@ -205,7 +205,7 @@ Begin DesktopWindow SetupWindow
          TextAlignment   =   0
          TextColor       =   &c000000
          Tooltip         =   ""
-         Top             =   154
+         Top             =   186
          Transparent     =   False
          Underline       =   False
          Visible         =   True
@@ -246,12 +246,12 @@ Begin DesktopWindow SetupWindow
          TextAlignment   =   0
          TextColor       =   &c000000
          Tooltip         =   ""
-         Top             =   122
+         Top             =   154
          Transparent     =   False
          Underline       =   False
          ValidationMask  =   ""
          Visible         =   True
-         Width           =   222
+         Width           =   251
       End
       Begin DesktopTextField tfMQTTTopic
          AllowAutoDeactivate=   True
@@ -288,12 +288,12 @@ Begin DesktopWindow SetupWindow
          TextAlignment   =   0
          TextColor       =   &c000000
          Tooltip         =   ""
-         Top             =   154
+         Top             =   186
          Transparent     =   False
          Underline       =   False
          ValidationMask  =   ""
          Visible         =   True
-         Width           =   222
+         Width           =   251
       End
       Begin DesktopButton btAddMQTT
          AllowAutoDeactivate=   True
@@ -309,7 +309,7 @@ Begin DesktopWindow SetupWindow
          Index           =   -2147483648
          InitialParent   =   "TabPanel1"
          Italic          =   False
-         Left            =   583
+         Left            =   704
          LockBottom      =   False
          LockedInPosition=   False
          LockLeft        =   True
@@ -321,11 +321,11 @@ Begin DesktopWindow SetupWindow
          TabPanelIndex   =   1
          TabStop         =   True
          Tooltip         =   ""
-         Top             =   346
+         Top             =   380
          Transparent     =   False
          Underline       =   False
          Visible         =   True
-         Width           =   80
+         Width           =   62
       End
       Begin DesktopLabel Label5
          AllowAutoDeactivate=   True
@@ -461,7 +461,7 @@ Begin DesktopWindow SetupWindow
          TextAlignment   =   0
          TextColor       =   &c000000
          Tooltip         =   ""
-         Top             =   186
+         Top             =   218
          Transparent     =   False
          Underline       =   False
          Visible         =   True
@@ -502,12 +502,12 @@ Begin DesktopWindow SetupWindow
          TextAlignment   =   0
          TextColor       =   &c000000
          Tooltip         =   ""
-         Top             =   186
+         Top             =   218
          Transparent     =   False
          Underline       =   False
          ValidationMask  =   ""
          Visible         =   True
-         Width           =   222
+         Width           =   251
       End
       Begin DesktopLabel Label9
          AllowAutoDeactivate=   True
@@ -536,7 +536,7 @@ Begin DesktopWindow SetupWindow
          TextAlignment   =   0
          TextColor       =   &c000000
          Tooltip         =   ""
-         Top             =   218
+         Top             =   250
          Transparent     =   False
          Underline       =   False
          Visible         =   True
@@ -577,12 +577,12 @@ Begin DesktopWindow SetupWindow
          TextAlignment   =   0
          TextColor       =   &c000000
          Tooltip         =   ""
-         Top             =   218
+         Top             =   250
          Transparent     =   False
          Underline       =   False
          ValidationMask  =   ""
          Visible         =   True
-         Width           =   222
+         Width           =   251
       End
       Begin DesktopLabel Label10
          AllowAutoDeactivate=   True
@@ -611,7 +611,7 @@ Begin DesktopWindow SetupWindow
          TextAlignment   =   0
          TextColor       =   &c000000
          Tooltip         =   ""
-         Top             =   250
+         Top             =   282
          Transparent     =   False
          Underline       =   False
          Visible         =   True
@@ -652,12 +652,12 @@ Begin DesktopWindow SetupWindow
          TextAlignment   =   0
          TextColor       =   &c000000
          Tooltip         =   ""
-         Top             =   250
+         Top             =   282
          Transparent     =   False
          Underline       =   False
          ValidationMask  =   ""
          Visible         =   True
-         Width           =   168
+         Width           =   251
       End
       Begin DesktopLabel Label13
          AllowAutoDeactivate=   True
@@ -686,7 +686,7 @@ Begin DesktopWindow SetupWindow
          TextAlignment   =   0
          TextColor       =   &c000000
          Tooltip         =   "Channel keys (PSK) for decryption"
-         Top             =   282
+         Top             =   314
          Transparent     =   False
          Underline       =   False
          Visible         =   True
@@ -727,12 +727,12 @@ Begin DesktopWindow SetupWindow
          TextAlignment   =   0
          TextColor       =   &c000000
          Tooltip         =   "Channel=PSK pairs separated by ; (PSK as the Meshtastic app shows it). A PSK alone is used for all other channels. Empty: the default key AQ== on every channel"
-         Top             =   282
+         Top             =   314
          Transparent     =   False
          Underline       =   False
          ValidationMask  =   ""
          Visible         =   True
-         Width           =   168
+         Width           =   251
       End
       Begin DesktopButton btShowPassword
          AllowAutoDeactivate=   True
@@ -748,7 +748,7 @@ Begin DesktopWindow SetupWindow
          Index           =   -2147483648
          InitialParent   =   "TabPanel1"
          Italic          =   False
-         Left            =   615
+         Left            =   712
          LockBottom      =   False
          LockedInPosition=   False
          LockLeft        =   True
@@ -760,11 +760,11 @@ Begin DesktopWindow SetupWindow
          TabPanelIndex   =   1
          TabStop         =   True
          Tooltip         =   "Show or hide the text"
-         Top             =   250
+         Top             =   284
          Transparent     =   False
          Underline       =   False
          Visible         =   True
-         Width           =   48
+         Width           =   64
       End
       Begin DesktopButton btShowKeys
          AllowAutoDeactivate=   True
@@ -780,7 +780,7 @@ Begin DesktopWindow SetupWindow
          Index           =   -2147483648
          InitialParent   =   "TabPanel1"
          Italic          =   False
-         Left            =   615
+         Left            =   712
          LockBottom      =   False
          LockedInPosition=   False
          LockLeft        =   True
@@ -792,11 +792,11 @@ Begin DesktopWindow SetupWindow
          TabPanelIndex   =   1
          TabStop         =   True
          Tooltip         =   "Show or hide the text"
-         Top             =   282
+         Top             =   316
          Transparent     =   False
          Underline       =   False
          Visible         =   True
-         Width           =   48
+         Width           =   64
       End
       Begin DesktopLabel Label15
          AllowAutoDeactivate=   True
@@ -825,7 +825,7 @@ Begin DesktopWindow SetupWindow
          TextAlignment   =   0
          TextColor       =   &c000000
          Tooltip         =   "Only this node's readings (empty: every node the gateway uploads)"
-         Top             =   314
+         Top             =   346
          Transparent     =   False
          Underline       =   False
          Visible         =   True
@@ -866,12 +866,12 @@ Begin DesktopWindow SetupWindow
          TextAlignment   =   0
          TextColor       =   &c000000
          Tooltip         =   "Only this node's readings (empty: every node the gateway uploads)"
-         Top             =   314
+         Top             =   346
          Transparent     =   False
          Underline       =   False
          ValidationMask  =   ""
          Visible         =   True
-         Width           =   222
+         Width           =   251
       End
       Begin DesktopCheckBox cbMQTTTLS
          AllowAutoDeactivate=   True
@@ -896,7 +896,7 @@ Begin DesktopWindow SetupWindow
          TabPanelIndex   =   1
          TabStop         =   True
          Tooltip         =   "Connect with TLS (port 8883 unless the broker field says host:port). The connection is encrypted, but the broker's certificate isn't verified"
-         Top             =   346
+         Top             =   378
          Transparent     =   False
          Underline       =   False
          Value           =   False
@@ -911,7 +911,7 @@ Begin DesktopWindow SetupWindow
          FontName        =   "System"
          FontSize        =   0.0
          FontUnit        =   0
-         Height          =   182
+         Height          =   206
          Index           =   -2147483648
          InitialParent   =   "TabPanel1"
          Italic          =   False
@@ -934,7 +934,7 @@ Begin DesktopWindow SetupWindow
          Underline       =   False
          Value           =   0
          Visible         =   True
-         Width           =   346
+         Width           =   414
          Begin DesktopLabel Label11
             AllowAutoDeactivate=   True
             Bold            =   False
@@ -1213,6 +1213,101 @@ Begin DesktopWindow SetupWindow
             Width           =   80
          End
       End
+      Begin DesktopPopupMenu pmMQTTProfiles
+         AllowAutoDeactivate=   True
+         Bold            =   False
+         Enabled         =   True
+         FontName        =   "System"
+         FontSize        =   0.0
+         FontUnit        =   0
+         Height          =   20
+         Index           =   -2147483648
+         InitialParent   =   "TabPanel1"
+         InitialValue    =   ""
+         Italic          =   False
+         Left            =   441
+         LockBottom      =   False
+         LockedInPosition=   False
+         LockLeft        =   True
+         LockRight       =   False
+         LockTop         =   True
+         Scope           =   0
+         SelectedRowIndex=   -1
+         TabIndex        =   22
+         TabPanelIndex   =   1
+         TabStop         =   True
+         Tooltip         =   ""
+         Top             =   122
+         Transparent     =   False
+         Underline       =   False
+         Visible         =   True
+         Width           =   251
+      End
+      Begin DesktopLabel Label16
+         AllowAutoDeactivate=   True
+         Bold            =   False
+         Enabled         =   True
+         FontName        =   "System"
+         FontSize        =   0.0
+         FontUnit        =   0
+         Height          =   20
+         Index           =   -2147483648
+         InitialParent   =   "TabPanel1"
+         Italic          =   False
+         Left            =   352
+         LockBottom      =   False
+         LockedInPosition=   False
+         LockLeft        =   True
+         LockRight       =   False
+         LockTop         =   True
+         Multiline       =   False
+         Scope           =   0
+         Selectable      =   False
+         TabIndex        =   23
+         TabPanelIndex   =   1
+         TabStop         =   True
+         Text            =   "Profile:"
+         TextAlignment   =   0
+         TextColor       =   &c000000
+         Tooltip         =   ""
+         Top             =   122
+         Transparent     =   False
+         Underline       =   False
+         Visible         =   True
+         Width           =   63
+      End
+      Begin DesktopButton btForgetMQTT
+         AllowAutoDeactivate=   True
+         Bold            =   False
+         Cancel          =   False
+         Caption         =   "Forget"
+         Default         =   False
+         Enabled         =   True
+         FontName        =   "System"
+         FontSize        =   0.0
+         FontUnit        =   0
+         Height          =   20
+         Index           =   -2147483648
+         InitialParent   =   "TabPanel1"
+         Italic          =   False
+         Left            =   704
+         LockBottom      =   False
+         LockedInPosition=   False
+         LockLeft        =   True
+         LockRight       =   False
+         LockTop         =   True
+         MacButtonStyle  =   0
+         Scope           =   0
+         TabIndex        =   24
+         TabPanelIndex   =   1
+         TabStop         =   True
+         Tooltip         =   ""
+         Top             =   122
+         Transparent     =   False
+         Underline       =   False
+         Visible         =   True
+         Width           =   72
+      End
    End
    Begin DesktopLabel Label2
       AllowAutoDeactivate=   True
@@ -1264,7 +1359,7 @@ Begin DesktopWindow SetupWindow
       Enabled         =   True
       Height          =   96
       Index           =   -2147483648
-      Left            =   642
+      Left            =   710
       LockBottom      =   False
       LockedInPosition=   False
       LockLeft        =   False
@@ -1313,6 +1408,7 @@ End
 		  FitControlsForLinux(Self) // taller controls on Linux
 		  // The fields as last used (settings file outside the project, see SettingsFile)
 		  LoadSetupFields
+		  LoadMQTTProfiles
 		End Sub
 	#tag EndEvent
 
@@ -1331,6 +1427,49 @@ End
 		  // Called by a MeshtasticWindow once connected to its node
 		  MyMeshtasticWindows.Add w
 		  lbDataSources.AddRow "Meshtastic", w.NodeID + " via " + w.SourceName, Str(MyMeshtasticWindows.Count-1)
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Sub LoadMQTTProfiles()
+		  // The saved MQTT feeds (table mqtt_profiles, see SaveMQTTProfile) in the popup, most recently used first; row 0 is
+		  // a title. When there are none yet, the MQTT fields in use become the first one
+		  mMQTTProfiles.RemoveAll
+		  pmMQTTProfiles.RemoveAllRows
+		  If MySensordb = Nil Then Return
+		  Dim rs As RowSet = MQTTProfiles()
+		  If (rs = Nil Or rs.AfterLastRow) And tfMQTTSite.Text.Trim <> "" Then
+		    SaveMQTTProfile(tfMQTTSite.Text.Trim, tfMQTTTopic.Text.Trim, tfMQTTNodeID.Text.Trim, tfMQTTUsername.Text.Trim, _
+		    tfMQTTUserPassword.Text.Trim, tfMQTTKeys.Text.Trim, tfMQTTNodeFilter.Text.Trim, cbMQTTTLS.Value)
+		    rs = MQTTProfiles()
+		  End If
+		  If rs <> Nil Then
+		    While Not rs.AfterLastRow
+		      Dim d As New Dictionary
+		      d.Value("id") = rs.Column("profileID").Int64Value
+		      d.Value("broker") = rs.Column("broker").StringValue
+		      d.Value("rootTopic") = rs.Column("rootTopic").StringValue
+		      d.Value("gatewayID") = rs.Column("gatewayID").StringValue
+		      d.Value("username") = rs.Column("username").StringValue
+		      d.Value("password") = rs.Column("password").StringValue
+		      d.Value("keys") = rs.Column("keys").StringValue
+		      d.Value("nodeFilter") = rs.Column("nodeFilter").StringValue
+		      d.Value("tls") = (rs.Column("tls").IntegerValue = 1)
+		      mMQTTProfiles.Add(d)
+		      rs.MoveToNextRow
+		    Wend
+		  End If
+		  If mMQTTProfiles.Count = 0 Then
+		    pmMQTTProfiles.AddRow("No saved feeds yet")
+		  Else
+		    pmMQTTProfiles.AddRow("Saved feeds (" + Str(mMQTTProfiles.Count) + ")")
+		  End If
+		  For Each d As Dictionary In mMQTTProfiles
+		    pmMQTTProfiles.AddRow(MQTTProfileName(d.Value("broker").StringValue, d.Value("rootTopic").StringValue, _
+		    d.Value("gatewayID").StringValue, d.Value("username").StringValue))
+		  Next
+		  pmMQTTProfiles.SelectedRowIndex = 0
+		  btForgetMQTT.Enabled = False
 		End Sub
 	#tag EndMethod
 
@@ -1445,6 +1584,10 @@ End
 
 	#tag Property, Flags = &h0
 		ContextualRow As Integer = -1
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mMQTTProfiles() As Dictionary
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
@@ -1590,6 +1733,38 @@ End
 		End Function
 	#tag EndEvent
 #tag EndEvents
+#tag Events pmMQTTProfiles
+	#tag Event
+		Sub SelectionChanged(item As DesktopMenuItem)
+		  // A saved feed fills the MQTT fields; Add opens it
+		  #Pragma Unused item
+		  Dim idx As Integer = Me.SelectedRowIndex
+		  btForgetMQTT.Enabled = (idx > 0)
+		  If idx <= 0 Or idx > mMQTTProfiles.Count Then Return
+		  Dim d As Dictionary = mMQTTProfiles(idx - 1)
+		  tfMQTTSite.Text = d.Value("broker").StringValue
+		  tfMQTTTopic.Text = d.Value("rootTopic").StringValue
+		  tfMQTTNodeID.Text = d.Value("gatewayID").StringValue
+		  tfMQTTUsername.Text = d.Value("username").StringValue
+		  tfMQTTUserPassword.Text = d.Value("password").StringValue
+		  tfMQTTKeys.Text = d.Value("keys").StringValue
+		  tfMQTTNodeFilter.Text = d.Value("nodeFilter").StringValue
+		  cbMQTTTLS.Value = d.Value("tls").BooleanValue
+		End Sub
+	#tag EndEvent
+#tag EndEvents
+#tag Events btForgetMQTT
+	#tag Event
+		Sub Pressed()
+		  // Deletes the saved feed selected in the popup (the fields stay as they are)
+		  Dim idx As Integer = pmMQTTProfiles.SelectedRowIndex
+		  If idx <= 0 Or idx > mMQTTProfiles.Count Then Return
+		  Dim d As Dictionary = mMQTTProfiles(idx - 1)
+		  ForgetMQTTProfile(d.Value("id").Int64Value)
+		  LoadMQTTProfiles
+		End Sub
+	#tag EndEvent
+#tag EndEvents
 #tag Events btAddMQTT
 	#tag Event
 		Sub Pressed()
@@ -1625,6 +1800,9 @@ End
 		  End If
 		  Dim tls As Boolean = cbMQTTTLS.Value
 		  
+		  // Saved feeds: this one becomes (or stays) a saved feed, the most recently used
+		  SaveMQTTProfile(broker, topic, UUID, username, pwd, keys, tfMQTTNodeFilter.Text.Trim(), tls)
+		  LoadMQTTProfiles
 		  SaveSetupFields
 		  Dim w As New MQTTwindow
 		  w.Setup(UUID, broker, username, pwd, topic, keys, nodeFilter, tls)

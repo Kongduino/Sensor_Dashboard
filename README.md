@@ -70,6 +70,7 @@ The fields are remembered between runs (see [Where things are kept](#where-thing
 
 | Field | Meaning |
 |---|---|
+| Profile | The saved feeds, most recently used first: pick one to fill the fields. Every feed opened with **Add** is saved (the same broker, root topic, gateway and user update it); **Forget** deletes the one selected |
 | Broker | Host name, or `host:port` (default port 1883, or 8883 with TLS) |
 | Root topic | The gateway's MQTT root topic, e.g. `msh/EU_868` |
 | Gateway | The **gateway's** node ID (`aabbccdd` or `!aabbccdd`). The feed subscribes to `<root>/2/e/+/!<id>` |
@@ -143,7 +144,7 @@ The value columns cover every key that appears in the exported readings, so a re
 |---|---|
 | Setup fields (broker, IDs, password, keys, last serial port) | `~/Library/Application Support/Sensor_Dashboard/settings.json` on macOS (the application data folder on other systems). Readable by your account only: it holds the broker password and channel keys in plain text. It's outside the project, so it can't end up in the repository. |
 | Map tiles | `tiles/` in the same folder (downloaded from OpenStreetMap once, refreshed after 30 days) |
-| Database | `records.sqlite`, in the same folder as `settings.json` (it used to be in `/tmp/Sensor_Dashboard`; a database left there is copied over once) |
+| Database | `records.sqlite`, in the same folder as `settings.json`, with the readings, positions and saved MQTT feeds (their passwords and keys included) (it used to be in `/tmp/Sensor_Dashboard`; a database left there is copied over once) |
 | Event logs and exports | `Session_<id>/`, in the folder the app runs from (next to the built app, or next to the project when run from Xojo) |
 
 ## Repository layout
