@@ -9,6 +9,17 @@ Inherits DesktopApplication
 
 
 	#tag MenuHandler
+		Function FileClose() As Boolean Handles FileClose.Action
+		  // ⌘W: closes the frontmost window, as its close button would (each window's Closing event cleans up)
+		  If App.WindowCount > 0 Then
+		    Dim w As DesktopWindow = App.WindowAt(0)
+		    If w <> Nil Then w.Close
+		  End If
+		  Return True
+		End Function
+	#tag EndMenuHandler
+
+	#tag MenuHandler
 		Function WindowSetup() As Boolean Handles WindowSetup.Action
 		  SetupWindow.Show()
 		  Return True
