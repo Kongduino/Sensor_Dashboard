@@ -174,7 +174,7 @@ LICENSE                         GPL-3.0
 
 ## Android version
 
-[Sensor_Dashboard_Android](https://github.com/Kongduino/Sensor_Dashboard_Android) is the same dashboard for Android phones and tablets, also in Xojo: the three sources (MQTT feed, a Meshtastic node over TCP, M5Stack AQI) as cards with on/off switches, the same charts and map, and sharing of the readings, positions and charts through Android's share sheet. It uses the same `Shared/` and `Library/` code and the same icon. It has no USB connection to a node (Xojo for Android has no serial port), and it collects data only while it's on screen.
+[Sensor_Dashboard_Android](https://github.com/Kongduino/Sensor_Dashboard_Android) is the same dashboard for Android phones and tablets, also in Xojo: the three sources (MQTT feed, a Meshtastic node over TCP, M5Stack AQI) as cards with on/off switches, the same charts and map, and sharing of the readings, positions and charts through Android's share sheet. It uses the same `Shared/` and `Library/` code and the same icon. It reaches a node over TCP or USB (through usb-serial-for-android), and it collects data only while it's on screen.
 
 ## Limitations
 
