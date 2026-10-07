@@ -243,8 +243,10 @@ End
 		    If Not fg.Exists Then fg.CreateFolder
 		    Dim f As FolderItem = fg.Child("SOIL_" + nodeText.Middle(1) + "_" + Format(DateTime.Now.SecondsFrom1970, "0") + ".csv")
 		    WriteSoilCSV(node, f)
+		    LogEvents "Export", "Exported " + nodeText + "'s soil readings to " + f.NativePath
 		    MessageBox "Soil readings saved to " + f.NativePath
 		  Catch e As RuntimeException
+		    LogEvents "Export", "Couldn't write the soil CSV: " + e.Message
 		    MessageBox "Couldn't write the file: " + e.Message
 		  End Try
 		End Sub

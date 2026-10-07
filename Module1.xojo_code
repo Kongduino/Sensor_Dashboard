@@ -153,8 +153,8 @@ Protected Module Module1
 		  If Not fg.Exists Then fg.CreateFolder()
 		  Dim fi As FolderItem = fg.Child("AQI_" + w.MyID + ".csv")
 		  WriteTelemetryCSV(rs, fi, "device", False)
-		  LogEvents "ExportAQI", "Exported successfuly file " + fi.NativePath
-		  MessageBox "Exported successfuly file " + fi.NativePath
+		  LogEvents "ExportAQI", "Exported " + fi.NativePath
+		  MessageBox "Exported " + fi.NativePath
 		  
 		  Dim p As Picture
 		  p = w.TemperatureChart.ToPicture
