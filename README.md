@@ -91,6 +91,8 @@ The Password and Keys fields are masked, with a **Show** button to check what yo
 
 **What gets charted:** environment telemetry that reaches the broker through the gateway. A node sends it every *environment update interval*, 30 minutes by default. The node must have **environment measurement enabled** in its telemetry settings; without it, the sensor is never read. A reply to a telemetry *request* is a PKI direct message to the node that asked, so it can't be read here.
 
+**DHT / Soil.** Next to **Add**, **DHT** (the default) opens the MQTT window described above. **Soil** opens a **Soil window** for the same feed instead, with its own connection: soil temperature and moisture of the nodes heard through that gateway (only the **Node**, when one is set), one metric at a time, live and from the stored readings. **Export CSV…** writes `Session_<id>/SOIL_<node>_<time>.csv` (time, then one column per metric). Soil readings of any node are stored by every MQTT, Soil and device window, whatever the node filter; new soil metrics (pH, conductivity, N/P/K…) are one entry each in `Shared/SoilData`.
+
 ### M5Stack AQI
 
 | Field | Meaning |
@@ -117,7 +119,7 @@ Only one window per node: a node has a single queue towards its clients, so two 
 - Each window shows the **latest values** at the top, and **min / avg / max** under each chart, over the samples shown.
 - **The X axis is a time axis:** each sample sits at the time it was taken, so gaps keep their real width. A reconnect, a node that sent nothing for an hour or a device that uploads every 10 minutes all show as such, instead of being squeezed to one step. The labels under the chart are the samples' times of day (`HH:MM` or `HH:MM:SS`, with the date in front when it isn't today), thinned out when they would overlap; the latest is always shown.
 - Charts keep the last 100 samples of each source. **A window opens with history:** the source's latest stored readings, from earlier sessions too (the same gateway and node, device or node), and live readings continue from there.
-- **Every sensor reading is stored** in SQLite (`records.sqlite`, table `telemetry`) with its source type, session, time, node or device ID and the full payload as JSON. Source types: `1` M5 AQI, `2` Meshtastic MQTT, `3` Meshtastic device. For the two Meshtastic sources, only environment telemetry counts as a reading: device metrics (battery, voltage, channel use) are neither charted nor stored, so an MQTT window's RSSI / SNR chart shows the radio values of the sensor packets. Readings and positions also store how the packet reached the gateway or connected node: the number of hops (`hops`, NULL when unknown), `hopStart`, `relayNode` (the last byte of the node that transmitted it last: the relay, or the sender itself when direct) and `viaMQTT`. **RSSI / SNR are charted and shown only for packets heard directly** (0 hops, not through MQTT): a relayed packet's values describe the last relay's link, not the sender's. They are stored anyway, and exported with the hops. Readings stored before the hops were recorded count as unknown, so their RSSI / SNR no longer show on the chart.
+- **Every sensor reading is stored** in SQLite (`records.sqlite`, table `telemetry`) with its source type, session, time, node or device ID and the full payload as JSON. Source types: `1` M5 AQI, `2` Meshtastic MQTT, `3` Meshtastic device. For the two Meshtastic sources, only environment telemetry counts as a reading (soil readings included, see DHT / Soil): device metrics (battery, voltage, channel use) are neither charted nor stored, so an MQTT window's RSSI / SNR chart shows the radio values of the sensor packets. Readings and positions also store how the packet reached the gateway or connected node: the number of hops (`hops`, NULL when unknown), `hopStart`, `relayNode` (the last byte of the node that transmitted it last: the relay, or the sender itself when direct) and `viaMQTT`. **RSSI / SNR are charted and shown only for packets heard directly** (0 hops, not through MQTT): a relayed packet's values describe the last relay's link, not the sender's. They are stored anyway, and exported with the hops. Readings stored before the hops were recorded count as unknown, so their RSSI / SNR no longer show on the chart.
 - Each run of the app is a **session**, with its own folder `Session_<id>/` holding `Event_Log.txt`, a log of everything the app did: connections, every packet received, every value charted.
 - **Export Data** (right-click a source) writes every stored reading of that source (earlier sessions included, once per time), plus its charts as PNG, into the session folder:
 
@@ -153,6 +155,7 @@ The value columns cover every key that appears in the exported readings, so a re
 Sensor_Dashboard.xojo_project   the project (open this in Xojo)
 SetupWindow.xojo_window         the Data Sources window: source list and the three tabs
 MQTTwindow.xojo_window          a Meshtastic MQTT feed
+SoilWindow.xojo_window          a Meshtastic MQTT feed's soil readings (soil temperature, moisture)
 M5AQIwindow.xojo_window         an M5Stack AQI device
 MeshtasticWindow.xojo_window    a Meshtastic node over TCP or USB
 Module1.xojo_code               desktop side: session folder, exports and their dialogs, settings file, Linux sizes
@@ -161,6 +164,7 @@ MapView.xojo_code               the map control (a DesktopCanvas): OpenStreetMap
 App.xojo_code, MainMenuBar.xojo_menu, Build Automation.xojo_code
 Shared/                         the code with no user interface, shared with the Android version:
   SensorData.xojo_code          database, session, event log, AQI / position / channel-key parsing, CSV and GPX writers
+  SoilData.xojo_code            soil metrics: the stored soil readings per node, soil CSV
   ChartLook.xojo_code           colours per quantity, series helpers, min / avg / max, number formatting
   PositionTrack.xojo_code       the positions of one node (what the Map tab draws)
   SensorSeries.xojo_code        one series of a SensorChart

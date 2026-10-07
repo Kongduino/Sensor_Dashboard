@@ -490,8 +490,9 @@ End
 		    Return
 		  End If
 		  If type = "telemetry" Then
-		    // A feed of one node: the other nodes' readings are left out
-		    If mNodeFilter <> 0 And js.Lookup("from", 0).UInt64Value <> mNodeFilter Then Return
+		    // A feed of one node: the other nodes' environment readings are left out, but soil readings of any node are
+		    // stored for the Soil window
+		    Dim followed As Boolean = (mNodeFilter = 0 Or js.Lookup("from", 0).UInt64Value = mNodeFilter)
 		    Dim rssi, snr, temp, rh, pa As Double
 		    Dim payload As JSONItem
 		    Dim TS As Integer
@@ -509,21 +510,26 @@ End
 		    payload = js.Lookup("payload", Nil)
 		    // Sensor readings only (environment telemetry): device metrics (battery, voltage...) are neither
 		    // charted, RSSI / SNR included, nor stored, as in the Meshtastic window
-		    If payload <> Nil And payload.HasKey("temperature") Then
-		      temp = payload.Lookup("temperature", -255).DoubleValue
-		      rh = payload.Lookup("relative_humidity", -255).DoubleValue
-		      pa = payload.Lookup("barometric_pressure", -255).DoubleValue
+		    Dim hasEnvironment As Boolean = (payload <> Nil And payload.HasKey("temperature"))
+		    Dim hasSoil As Boolean = HasSoilData(payload)
+		    If (followed And hasEnvironment) Or hasSoil Then
 		      // Stored as received, with the hops; charted only for a packet the gateway heard directly (see IsDirect)
 		      Dim hops, hopStart, relayNode As Integer
 		      Dim viaMQTT As Boolean
 		      MeshLastPacketRadio(hops, hopStart, relayNode, viaMQTT)
-		      Dim direct As Boolean = IsDirect(hops, viaMQTT)
-		      updateData(If(direct, rssi, -255), If(direct, snr, -255), temp, rh, pa, TS)
-		      TempChart.Refresh()
-		      RHChart.Refresh()
-		      HPaChart.Refresh()
-		      SNRSSIchart.Refresh()
+		      If followed And hasEnvironment Then
+		        temp = payload.Lookup("temperature", -255).DoubleValue
+		        rh = payload.Lookup("relative_humidity", -255).DoubleValue
+		        pa = payload.Lookup("barometric_pressure", -255).DoubleValue
+		        Dim direct As Boolean = IsDirect(hops, viaMQTT)
+		        updateData(If(direct, rssi, -255), If(direct, snr, -255), temp, rh, pa, TS)
+		        TempChart.Refresh()
+		        RHChart.Refresh()
+		        HPaChart.Refresh()
+		        SNRSSIchart.Refresh()
+		      End If
 		      LogTelemetry(2, fromID, senderID, Str(TS), payload.ToString, rssi, snr, MySessionNum, hops, hopStart, relayNode, viaMQTT)
+		      If hasSoil Then SoilChanged
 		    End If
 		  End If
 		  

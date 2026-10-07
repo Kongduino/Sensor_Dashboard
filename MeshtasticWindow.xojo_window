@@ -507,7 +507,9 @@ End
 		  End If
 		  If js.Lookup("type", "?").StringValue <> "telemetry" Then Return
 		  Dim payload As JSONItem = js.Lookup("payload", Nil)
-		  If payload = Nil Or Not payload.HasKey("temperature") Then Return // device metrics, not the sensor
+		  // Environment readings (temperature...) and soil readings are stored; device metrics aren't
+		  Dim hasEnvironment As Boolean = (payload <> Nil And payload.HasKey("temperature"))
+		  If Not hasEnvironment And Not HasSoilData(payload) Then Return
 		  Dim fromNum As UInt32 = js.Lookup("from", 0).UInt64Value
 		  
 		  Dim TS As Integer = js.Lookup("timestamp", 0).IntegerValue
@@ -525,9 +527,10 @@ End
 		    MeshLastPacketRadio(hops, hopStart, relayNode, viaMQTT) // how this packet reached the gateway / node
 		    LogTelemetry(3, Format(fromNum, "0"), Format(mMyNum, "0"), Str(TS), payload.ToString, _
 		    js.Lookup("rssi", -255).DoubleValue, js.Lookup("snr", -255).DoubleValue, MySessionNum, hops, hopStart, relayNode, viaMQTT)
+		    If HasSoilData(payload) Then SoilChanged
 		  End If
 		  
-		  If fromNum <> mChartNode Then Return
+		  If fromNum <> mChartNode Or Not hasEnvironment Then Return // only the charted node's environment readings are charted
 		  Dim temp As Double = payload.Lookup("temperature", -255).DoubleValue
 		  Dim rh As Double = payload.Lookup("relative_humidity", -255).DoubleValue
 		  Dim pa As Double = payload.Lookup("barometric_pressure", -255).DoubleValue

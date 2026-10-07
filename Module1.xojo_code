@@ -63,6 +63,15 @@ Protected Module Module1
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
+		Sub SoilChanged()
+		  // A window stored soil readings: every Soil window shows them (each picks its own nodes)
+		  For Each w As SoilWindow In MySoilWindows
+		    w.SoilDataChanged
+		  Next
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Sub StyleChart(c As SensorChart, title As String, valueFormat As String, bars As Boolean = False)
 		  // Clears a chart and sets its title. The look itself is in SensorChart; valueFormat and bars are kept for
 		  // the callers (SensorChart picks the decimals from the axis steps, and each series says whether it is a bar)
@@ -285,6 +294,10 @@ Protected Module Module1
 
 	#tag Property, Flags = &h0
 		MySensordbFI As FolderItem
+	#tag EndProperty
+
+	#tag Property, Flags = &h0
+		MySoilWindows() As SoilWindow
 	#tag EndProperty
 
 

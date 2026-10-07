@@ -885,11 +885,11 @@ Begin DesktopWindow SetupWindow
          Index           =   -2147483648
          InitialParent   =   "TabPanel1"
          Italic          =   False
-         Left            =   441
+         Left            =   621
          LockBottom      =   False
          LockedInPosition=   False
-         LockLeft        =   True
-         LockRight       =   False
+         LockLeft        =   False
+         LockRight       =   True
          LockTop         =   True
          Scope           =   0
          TabIndex        =   21
@@ -902,7 +902,7 @@ Begin DesktopWindow SetupWindow
          Value           =   False
          Visible         =   True
          VisualState     =   0
-         Width           =   100
+         Width           =   71
       End
       Begin DesktopTabPanel tpConnectionTypes
          AllowAutoDeactivate=   True
@@ -1308,6 +1308,29 @@ Begin DesktopWindow SetupWindow
          Visible         =   True
          Width           =   72
       End
+      BeginDesktopSegmentedButton DesktopSegmentedButton sbDataType
+         Enabled         =   True
+         Height          =   24
+         Index           =   -2147483648
+         InitialParent   =   "TabPanel1"
+         Left            =   341
+         LockBottom      =   False
+         LockedInPosition=   False
+         LockLeft        =   True
+         LockRight       =   False
+         LockTop         =   True
+         MacButtonStyle  =   0
+         Scope           =   0
+         Segments        =   "DHT\n\nTrue\rSoil\n\nFalse"
+         SelectionStyle  =   0
+         TabIndex        =   25
+         TabPanelIndex   =   1
+         TabStop         =   False
+         Tooltip         =   ""
+         Top             =   380
+         Visible         =   True
+         Width           =   104
+      End
    End
    Begin DesktopLabel Label2
       AllowAutoDeactivate=   True
@@ -1620,6 +1643,8 @@ End
 		    MyMQTTwindows(n).Show()
 		  Case "Meshtastic"
 		    MyMeshtasticWindows(n).Show()
+		  Case "Soil"
+		    MySoilWindows(n).Show()
 		  End Select
 		  
 		End Sub
@@ -1653,6 +1678,8 @@ End
 		      ExportAQI(MyAQIwindows(ix))
 		    Case "Meshtastic"
 		      ExportDevice(MyMeshtasticWindows(ix))
+		    Case "Soil"
+		      MySoilWindows(ix).ExportCSV
 		    End Select
 		    Return True
 		  Case "Close Source"
@@ -1665,6 +1692,8 @@ End
 		      MyAQIwindows(n).Close
 		    Case "Meshtastic"
 		      MyMeshtasticWindows(n).Close
+		    Case "Soil"
+		      MySoilWindows(n).Close
 		    End Select
 		    Return True
 		  End Select
@@ -1733,38 +1762,6 @@ End
 		End Function
 	#tag EndEvent
 #tag EndEvents
-#tag Events pmMQTTProfiles
-	#tag Event
-		Sub SelectionChanged(item As DesktopMenuItem)
-		  // A saved feed fills the MQTT fields; Add opens it
-		  #Pragma Unused item
-		  Dim idx As Integer = Me.SelectedRowIndex
-		  btForgetMQTT.Enabled = (idx > 0)
-		  If idx <= 0 Or idx > mMQTTProfiles.Count Then Return
-		  Dim d As Dictionary = mMQTTProfiles(idx - 1)
-		  tfMQTTSite.Text = d.Value("broker").StringValue
-		  tfMQTTTopic.Text = d.Value("rootTopic").StringValue
-		  tfMQTTNodeID.Text = d.Value("gatewayID").StringValue
-		  tfMQTTUsername.Text = d.Value("username").StringValue
-		  tfMQTTUserPassword.Text = d.Value("password").StringValue
-		  tfMQTTKeys.Text = d.Value("keys").StringValue
-		  tfMQTTNodeFilter.Text = d.Value("nodeFilter").StringValue
-		  cbMQTTTLS.Value = d.Value("tls").BooleanValue
-		End Sub
-	#tag EndEvent
-#tag EndEvents
-#tag Events btForgetMQTT
-	#tag Event
-		Sub Pressed()
-		  // Deletes the saved feed selected in the popup (the fields stay as they are)
-		  Dim idx As Integer = pmMQTTProfiles.SelectedRowIndex
-		  If idx <= 0 Or idx > mMQTTProfiles.Count Then Return
-		  Dim d As Dictionary = mMQTTProfiles(idx - 1)
-		  ForgetMQTTProfile(d.Value("id").Int64Value)
-		  LoadMQTTProfiles
-		End Sub
-	#tag EndEvent
-#tag EndEvents
 #tag Events btAddMQTT
 	#tag Event
 		Sub Pressed()
@@ -1804,12 +1801,20 @@ End
 		  SaveMQTTProfile(broker, topic, UUID, username, pwd, keys, tfMQTTNodeFilter.Text.Trim(), tls)
 		  LoadMQTTProfiles
 		  SaveSetupFields
-		  Dim w As New MQTTwindow
-		  w.Setup(UUID, broker, username, pwd, topic, keys, nodeFilter, tls)
-		  MyMQTTwindows.Add w
 		  Dim sourceText As String = topic + "/" + UUID
 		  If nodeFilter <> "" Then sourceText = "!" + nodeFilter + " via " + sourceText
 		  If tls Then sourceText = sourceText + " (TLS)"
+		  // DHT: temperature, humidity, pressure (MQTT window); Soil: soil readings (Soil window)
+		  If sbDataType.SelectedSegmentIndex = 1 Then
+		    Dim sw As New SoilWindow
+		    MySoilWindows.Add sw
+		    sw.Setup(UUID, broker, username, pwd, topic, keys, nodeFilter, tls)
+		    lbDataSources.AddRow "Soil", sourceText, Str(MySoilWindows.Count-1)
+		    Return
+		  End If
+		  Dim w As New MQTTwindow
+		  w.Setup(UUID, broker, username, pwd, topic, keys, nodeFilter, tls)
+		  MyMQTTwindows.Add w
 		  lbDataSources.AddRow "MQTT", sourceText, Str(MyMQTTwindows.Count-1)
 		  
 		End Sub
@@ -2007,6 +2012,38 @@ End
 		  Dim w As New MeshtasticWindow
 		  w.StartSerial(SerialDevice.At(i))
 		  
+		End Sub
+	#tag EndEvent
+#tag EndEvents
+#tag Events pmMQTTProfiles
+	#tag Event
+		Sub SelectionChanged(item As DesktopMenuItem)
+		  // A saved feed fills the MQTT fields; Add opens it
+		  #Pragma Unused item
+		  Dim idx As Integer = Me.SelectedRowIndex
+		  btForgetMQTT.Enabled = (idx > 0)
+		  If idx <= 0 Or idx > mMQTTProfiles.Count Then Return
+		  Dim d As Dictionary = mMQTTProfiles(idx - 1)
+		  tfMQTTSite.Text = d.Value("broker").StringValue
+		  tfMQTTTopic.Text = d.Value("rootTopic").StringValue
+		  tfMQTTNodeID.Text = d.Value("gatewayID").StringValue
+		  tfMQTTUsername.Text = d.Value("username").StringValue
+		  tfMQTTUserPassword.Text = d.Value("password").StringValue
+		  tfMQTTKeys.Text = d.Value("keys").StringValue
+		  tfMQTTNodeFilter.Text = d.Value("nodeFilter").StringValue
+		  cbMQTTTLS.Value = d.Value("tls").BooleanValue
+		End Sub
+	#tag EndEvent
+#tag EndEvents
+#tag Events btForgetMQTT
+	#tag Event
+		Sub Pressed()
+		  // Deletes the saved feed selected in the popup (the fields stay as they are)
+		  Dim idx As Integer = pmMQTTProfiles.SelectedRowIndex
+		  If idx <= 0 Or idx > mMQTTProfiles.Count Then Return
+		  Dim d As Dictionary = mMQTTProfiles(idx - 1)
+		  ForgetMQTTProfile(d.Value("id").Int64Value)
+		  LoadMQTTProfiles
 		End Sub
 	#tag EndEvent
 #tag EndEvents
