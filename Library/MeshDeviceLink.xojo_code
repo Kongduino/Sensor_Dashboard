@@ -93,7 +93,8 @@ Protected Class MeshDeviceLink
 
 	#tag Method, Flags = &h21
 		Private Sub HandleFromRadio(payload As String)
-		  // One FromRadio message: 2 packet, 3 my_info, 4 node_info, 6 log_record, 7 config_complete_id, 8 rebooted
+		  // One FromRadio message: 2 packet, 3 my_info, 4 node_info, 6 log_record, 7 config_complete_id, 8 rebooted,
+		  // 12 xmodemPacket, 15 fileInfo
 		  payload = MeshBin(payload) // one byte per character on Android (see MeshBin)
 		  Dim mb As MemoryBlock = payload
 		  Dim r As New ProtoReader(mb)
@@ -135,6 +136,46 @@ Protected Class MeshDeviceLink
 		      Call r.ReadVarint()
 		      RaiseEvent LogLine("The device rebooted: asking for its configuration again")
 		      RequestConfig
+		    Case 12
+		      // The device's reply in a file transfer (see SendXModem)
+		      If wireType <> 2 Then Return
+		      Dim xm As ProtoReader = r.ReadMessage()
+		      If xm = Nil Then Return
+		      Dim control As Integer = 0
+		      Dim seq As Integer = 0
+		      Dim f3, w3 As Integer
+		      While xm.ReadTag(f3, w3)
+		        If f3 = 1 And w3 = 0 Then
+		          Dim c As UInt64 = xm.ReadVarint()
+		          control = c
+		        ElseIf f3 = 2 And w3 = 0 Then
+		          Dim q As UInt64 = xm.ReadVarint()
+		          seq = q
+		        Else
+		          xm.Skip(w3)
+		        End If
+		      Wend
+		      RaiseEvent XModemReceived(control, seq)
+		    Case 15
+		      // One file of the device's filesystem (FileInfo: 1 file_name, 2 size_bytes), sent with its configuration
+		      If wireType <> 2 Then Return
+		      Dim fi As ProtoReader = r.ReadMessage()
+		      If fi = Nil Then Return
+		      Dim fileName As String
+		      Dim fileSize As UInt32 = 0
+		      Dim f4, w4 As Integer
+		      While fi.ReadTag(f4, w4)
+		        If f4 = 1 And w4 = 2 Then
+		          fileName = fi.ReadString
+		        ElseIf f4 = 2 And w4 = 0 Then
+		          Dim n As UInt64 = fi.ReadVarint()
+		          fileSize = n
+		        Else
+		          fi.Skip(w4)
+		        End If
+		      Wend
+		      mFileNames.Add(fileName)
+		      mFileSizes.Add(fileSize)
 		    Else
 		      r.Skip(wireType)
 		    End Select
@@ -147,6 +188,26 @@ Protected Class MeshDeviceLink
 		  // ToRadio.heartbeat (an empty message) keeps the API connection open
 		  If mOpen Then SendToRadio(ProtoFieldBytes(7, ""))
 		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function FileCount() As Integer
+		  // The files the device sent with its configuration (its filesystem; not the font packs kept in a flash slot)
+		  Return mFileNames.Count
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function FileNameAt(i As Integer) As String
+		  // A full path ("/fonts/cjk16.mfp"), or a bare name on some platforms
+		  Return mFileNames(i)
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function FileSizeAt(i As Integer) As UInt32
+		  Return mFileSizes(i)
+		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
@@ -382,6 +443,8 @@ Protected Class MeshDeviceLink
 		  mNodeNums.RemoveAll
 		  mNodeLongNames.RemoveAll
 		  mNodeShortNames.RemoveAll
+		  mFileNames.RemoveAll
+		  mFileSizes.RemoveAll
 		  Do
 		    mConfigNonce = System.Random.InRange(1, 2147483647)
 		  Loop Until mConfigNonce <> 69420 And mConfigNonce <> 69421
@@ -401,6 +464,58 @@ Protected Class MeshDeviceLink
 		  ProtoFieldVarint(9, 3) + ProtoFieldVarint(10, 1))
 		  SendToRadio(ProtoFieldBytes(1, packet)) // ToRadio.packet
 		  Return packetID
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function DeleteFile(path As String) As UInt32
+		  // Asks the device to delete a file of its filesystem (AdminMessage.delete_file_request), e.g. a font pack:
+		  // "/fonts/cjk16.mfp" (the firmware also frees a pack kept in a flash slot), or "/fonts" for every pack. Returns
+		  // the packet id (0 if not connected)
+		  If Not mOpen Then Return 0
+		  Dim packetID As UInt32 = MeshNewPacketID()
+		  Dim admin As String = MeshBin(ProtoFieldBytes(22, path.ConvertEncoding(Encodings.UTF8)))
+		  // Data: 1 portnum (6: ADMIN_APP), 2 payload
+		  Dim data As String = MeshBin(ProtoFieldVarint(1, 6) + ProtoFieldBytes(2, admin))
+		  // MeshPacket to the device itself: 2 to, 4 decoded, 6 id
+		  Dim packet As String = MeshBin(ProtoFieldFixed32(2, mMyNodeNum) + ProtoFieldBytes(4, data) + ProtoFieldFixed32(6, packetID))
+		  SendToRadio(ProtoFieldBytes(1, packet)) // ToRadio.packet
+		  Return packetID
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Sub SendXModem(control As Integer, seq As Integer, data As String = "")
+		  // One packet of the client API's file transfer (ToRadio.xmodemPacket): control (1 SOH, 4 EOT, 6 ACK, 21 NAK,
+		  // 24 CAN), sequence number, up to 128 bytes of data, and the CRC-16 the device checks. The device answers with
+		  // XModemReceived. A transfer to the device: SOH with seq 0 and the file name, then SOH with seq 1, 2... and the
+		  // data, then EOT
+		  Dim bin As String = MeshBin(data)
+		  Dim crc As Integer = XModemCRC16(bin)
+		  Dim msg As String = ProtoFieldVarint(1, control) + ProtoFieldVarint(2, seq) + ProtoFieldVarint(3, crc)
+		  If bin.Bytes > 0 Then msg = msg + ProtoFieldBytes(4, bin)
+		  SendToRadio(ProtoFieldBytes(5, msg)) // ToRadio.xmodemPacket
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Function XModemCRC16(data As String) As Integer
+		  // The CRC-16 (CCITT, as the firmware's xmodem.cpp computes it) of an XModem packet's data
+		  Dim mb As MemoryBlock = data
+		  Dim crc As Integer = 0
+		  For i As Integer = 0 To mb.Size - 1
+		    Dim hi As Integer = Bitwise.ShiftRight(crc, 8)
+		    Dim lo As Integer = Bitwise.ShiftLeft(crc, 8)
+		    crc = (hi Or lo) And &hFFFF
+		    crc = crc Xor mb.Byte(i)
+		    Dim low4 As Integer = Bitwise.ShiftRight(crc And &hFF, 4)
+		    crc = crc Xor low4
+		    Dim s12 As Integer = Bitwise.ShiftLeft(crc, 12)
+		    crc = (crc Xor s12) And &hFFFF
+		    Dim s5 As Integer = Bitwise.ShiftLeft(crc And &hFF, 5)
+		    crc = (crc Xor s5) And &hFFFF
+		  Next
+		  Return crc
 		End Function
 	#tag EndMethod
 
@@ -539,6 +654,10 @@ Protected Class MeshDeviceLink
 		Event PacketReceived(envelope As String)
 	#tag EndHook
 
+	#tag Hook, Flags = &h0
+		Event XModemReceived(control As Integer, seq As Integer)
+	#tag EndHook
+
 
 	#tag Property, Flags = &h21
 		Private mBuffer As String
@@ -550,6 +669,14 @@ Protected Class MeshDeviceLink
 
 	#tag Property, Flags = &h21
 		Private mConfigNonce As UInt32
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mFileNames() As String
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mFileSizes() As UInt32
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
