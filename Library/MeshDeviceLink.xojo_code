@@ -166,7 +166,7 @@ Protected Class MeshDeviceLink
 		      Dim f4, w4 As Integer
 		      While fi.ReadTag(f4, w4)
 		        If f4 = 1 And w4 = 2 Then
-		          fileName = fi.ReadString
+		          fileName = fi.ReadString()
 		        ElseIf f4 = 2 And w4 = 0 Then
 		          Dim n As UInt64 = fi.ReadVarint()
 		          fileSize = n
@@ -443,8 +443,8 @@ Protected Class MeshDeviceLink
 		  mNodeNums.RemoveAll
 		  mNodeLongNames.RemoveAll
 		  mNodeShortNames.RemoveAll
-		  mFileNames.RemoveAll
-		  mFileSizes.RemoveAll
+		  mFileNames.RemoveAll()
+		  mFileSizes.RemoveAll()
 		  Do
 		    mConfigNonce = System.Random.InRange(1, 2147483647)
 		  Loop Until mConfigNonce <> 69420 And mConfigNonce <> 69421
@@ -503,17 +503,25 @@ Protected Class MeshDeviceLink
 		  // The CRC-16 (CCITT, as the firmware's xmodem.cpp computes it) of an XModem packet's data
 		  Dim mb As MemoryBlock = data
 		  Dim crc As Integer = 0
+		  // Bitwise functions on plain variables: on Android, And / Xor inside a Bitwise.Shift argument become logical
+		  // operators (Kotlin: Boolean where a number is expected)
 		  For i As Integer = 0 To mb.Size - 1
 		    Dim hi As Integer = Bitwise.ShiftRight(crc, 8)
 		    Dim lo As Integer = Bitwise.ShiftLeft(crc, 8)
-		    crc = (hi Or lo) And &hFFFF
-		    crc = crc Xor mb.Byte(i)
-		    Dim low4 As Integer = Bitwise.ShiftRight(crc And &hFF, 4)
-		    crc = crc Xor low4
+		    Dim swapped As Integer = Bitwise.BitOr(hi, lo)
+		    crc = Bitwise.BitAnd(swapped, &hFFFF)
+		    Dim b As Integer = mb.Byte(i)
+		    crc = Bitwise.BitXor(crc, b)
+		    Dim low8 As Integer = Bitwise.BitAnd(crc, &hFF)
+		    Dim low4 As Integer = Bitwise.ShiftRight(low8, 4)
+		    crc = Bitwise.BitXor(crc, low4)
 		    Dim s12 As Integer = Bitwise.ShiftLeft(crc, 12)
-		    crc = (crc Xor s12) And &hFFFF
-		    Dim s5 As Integer = Bitwise.ShiftLeft(crc And &hFF, 5)
-		    crc = (crc Xor s5) And &hFFFF
+		    Dim x12 As Integer = Bitwise.BitXor(crc, s12)
+		    crc = Bitwise.BitAnd(x12, &hFFFF)
+		    Dim low8b As Integer = Bitwise.BitAnd(crc, &hFF)
+		    Dim s5 As Integer = Bitwise.ShiftLeft(low8b, 5)
+		    Dim x5 As Integer = Bitwise.BitXor(crc, s5)
+		    crc = Bitwise.BitAnd(x5, &hFFFF)
 		  Next
 		  Return crc
 		End Function
