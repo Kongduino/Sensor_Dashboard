@@ -128,8 +128,11 @@ Protected Module SensorData
 		    End If
 		    LogEvents("OpenDatabase", "Connected to db!")
 		  End If
-		  // Source types (the table is created with 1 and 2; 3 is added to older databases too)
+		  // Source types (the table is created with 1 and 2; 3 is added to older databases too). 4 and 5: device metrics
+		  // (battery, voltage) from an MQTT feed and from a node's own link, kept apart from the sensor readings (BatteryCurve)
 		  MySensordb.ExecuteSQL("INSERT OR IGNORE INTO logtypes(id, typeName) VALUES (3, 'Meshtastic device');")
+		  MySensordb.ExecuteSQL("INSERT OR IGNORE INTO logtypes(id, typeName) VALUES (4, 'Meshtastic MQTT device metrics');")
+		  MySensordb.ExecuteSQL("INSERT OR IGNORE INTO logtypes(id, typeName) VALUES (5, 'Meshtastic device, device metrics');")
 		  // GPS positions of Meshtastic nodes (MQTT feeds and devices), for the Map tabs
 		  MySensordb.ExecuteSQL("CREATE TABLE IF NOT EXISTS positions(posID INTEGER PRIMARY KEY, sessionID INTEGER, " + _
 		  "timestamp INTEGER, fromID INTEGER, senderID INTEGER, latitude REAL, longitude REAL, altitude INTEGER, " + _

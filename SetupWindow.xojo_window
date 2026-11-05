@@ -1321,15 +1321,40 @@ Begin DesktopWindow SetupWindow
          LockTop         =   True
          MacButtonStyle  =   0
          Scope           =   0
-         Segments        =   "DHT\n\nTrue\rSoil\n\nFalse"
+         Segments        =   "DHT\n\nTrue\rSoil\n\nFalse\rBattery\n\nFalse"
          SelectionStyle  =   0
          TabIndex        =   25
          TabPanelIndex   =   1
          TabStop         =   False
          Tooltip         =   ""
          Top             =   380
+         Transparent     =   False
          Visible         =   True
-         Width           =   104
+         Width           =   199
+      End
+      BeginDesktopSegmentedButton DesktopSegmentedButton sbDeviceType
+         Enabled         =   True
+         Height          =   24
+         Index           =   -2147483648
+         InitialParent   =   "TabPanel1"
+         Left            =   352
+         LockBottom      =   False
+         LockedInPosition=   False
+         LockLeft        =   True
+         LockRight       =   False
+         LockTop         =   True
+         MacButtonStyle  =   0
+         Scope           =   0
+         Segments        =   "Sensors\n\nTrue\rBattery\n\nFalse"
+         SelectionStyle  =   0
+         TabIndex        =   26
+         TabPanelIndex   =   3
+         TabStop         =   False
+         Tooltip         =   ""
+         Top             =   380
+         Transparent     =   False
+         Visible         =   True
+         Width           =   168
       End
    End
    Begin DesktopLabel Label2
@@ -1442,6 +1467,14 @@ End
 		  MyAQIwindows.Add w
 		  lbDataSources.AddRow "M5AQI", w.MyID, Str(MyAQIwindows.Count-1)
 		  LogEvents "btAddAQI", w.MyID + ": " + w.nickname + " / " + Str(w.periodicity) + " seconds"
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Sub AddBatterySource(w As BatteryWindow, sourceText As String)
+		  // Called by a MeshtasticWindow that opened a Battery window for its node (device tab, Battery)
+		  MyBatteryWindows.Add w
+		  lbDataSources.AddRow "Battery", sourceText, Str(MyBatteryWindows.Count-1)
 		End Sub
 	#tag EndMethod
 
@@ -1645,6 +1678,8 @@ End
 		    MyMeshtasticWindows(n).Show()
 		  Case "Soil"
 		    MySoilWindows(n).Show()
+		  Case "Battery"
+		    MyBatteryWindows(n).Show()
 		  End Select
 		  
 		End Sub
@@ -1680,6 +1715,8 @@ End
 		      ExportDevice(MyMeshtasticWindows(ix))
 		    Case "Soil"
 		      MySoilWindows(ix).ExportCSV
+		    Case "Battery"
+		      MyBatteryWindows(ix).ExportCSV
 		    End Select
 		    Return True
 		  Case "Close Source"
@@ -1694,6 +1731,8 @@ End
 		      MyMeshtasticWindows(n).Close
 		    Case "Soil"
 		      MySoilWindows(n).Close
+		    Case "Battery"
+		      MyBatteryWindows(n).Close
 		    End Select
 		    Return True
 		  End Select
@@ -1804,7 +1843,15 @@ End
 		  Dim sourceText As String = topic + "/" + UUID
 		  If nodeFilter <> "" Then sourceText = "!" + nodeFilter + " via " + sourceText
 		  If tls Then sourceText = sourceText + " (TLS)"
-		  // DHT: temperature, humidity, pressure (MQTT window); Soil: soil readings (Soil window)
+		  // DHT: temperature, humidity, pressure (MQTT window); Soil: soil readings (Soil window); Battery: device metrics
+		  // and battery curves (Battery window)
+		  If sbDataType.SelectedSegmentIndex = 2 Then
+		    Dim bw As New BatteryWindow
+		    MyBatteryWindows.Add bw
+		    bw.Setup(UUID, broker, username, pwd, topic, keys, nodeFilter, tls)
+		    lbDataSources.AddRow "Battery", sourceText, Str(MyBatteryWindows.Count-1)
+		    Return
+		  End If
 		  If sbDataType.SelectedSegmentIndex = 1 Then
 		    Dim sw As New SoilWindow
 		    MySoilWindows.Add sw
@@ -1982,6 +2029,7 @@ End
 		  End If
 		  SaveSetupFields
 		  Dim w As New MeshtasticWindow
+		  w.WithBattery = (sbDeviceType.SelectedSegmentIndex = 1) // Battery: a Battery window too, once connected
 		  w.StartTCP(host, port)
 		  
 		End Sub
@@ -2010,6 +2058,7 @@ End
 		  End If
 		  SaveSetupFields
 		  Dim w As New MeshtasticWindow
+		  w.WithBattery = (sbDeviceType.SelectedSegmentIndex = 1) // Battery: a Battery window too, once connected
 		  w.StartSerial(SerialDevice.At(i))
 		  
 		End Sub

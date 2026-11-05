@@ -507,17 +507,20 @@ End
 		  End If
 		  If js.Lookup("type", "?").StringValue <> "telemetry" Then Return
 		  Dim payload As JSONItem = js.Lookup("payload", Nil)
-		  // Environment readings (temperature...) and soil readings are stored; device metrics aren't
+		  // Environment readings (temperature...) and soil readings are stored as logType 3; device metrics (battery,
+		  // voltage...) as logType 5, apart, for battery curves (see BatteryCurve)
 		  Dim hasEnvironment As Boolean = (payload <> Nil And payload.HasKey("temperature"))
-		  If Not hasEnvironment And Not HasSoilData(payload) Then Return
+		  Dim hasDevice As Boolean = IsDeviceMetrics(payload)
+		  If Not hasEnvironment And Not HasSoilData(payload) And Not hasDevice Then Return
 		  Dim fromNum As UInt32 = js.Lookup("from", 0).UInt64Value
 		  
 		  Dim TS As Integer = js.Lookup("timestamp", 0).IntegerValue
 		  If TS <= 0 Then TS = DateTime.Now.SecondsFrom1970 // own packets may have no rx_time
 		  
-		  // SQLite: logType 3 = Meshtastic device, fromID the node that measured, senderID the connected node.
+		  // SQLite: logType 3 = Meshtastic device (5 for its device metrics), fromID the node that measured, senderID the connected node.
 		  // At each connection the device replays the last packet of every node: stored once per node and time
 		  Dim key As String = Str(fromNum)
+		  If hasDevice Then key = key + " device"
 		  If mLastStored = Nil Then mLastStored = New Dictionary
 		  If TS > mLastStored.Lookup(key, 0).IntegerValue Then
 		    mLastStored.Value(key) = TS
@@ -525,9 +528,10 @@ End
 		    Dim hops, hopStart, relayNode As Integer
 		    Dim viaMQTT As Boolean
 		    MeshLastPacketRadio(hops, hopStart, relayNode, viaMQTT) // how this packet reached the gateway / node
-		    LogTelemetry(3, Format(fromNum, "0"), Format(mMyNum, "0"), Str(TS), payload.ToString, _
+		    LogTelemetry(If(hasDevice, 5, 3), Format(fromNum, "0"), Format(mMyNum, "0"), Str(TS), payload.ToString, _
 		    js.Lookup("rssi", -255).DoubleValue, js.Lookup("snr", -255).DoubleValue, MySessionNum, hops, hopStart, relayNode, viaMQTT)
 		    If HasSoilData(payload) Then SoilChanged
+		    If hasDevice Then BatteryChanged(fromNum)
 		  End If
 		  
 		  If fromNum <> mChartNode Or Not hasEnvironment Then Return // only the charted node's environment readings are charted
@@ -585,6 +589,7 @@ End
 		      MessageBox NodeID + " """ + Owner + """ is already followed via " + other.SourceName + "." + EndOfLine + EndOfLine + _
 		      "A node sends its packets to one client at a time: two windows would share its readings."
 		      other.Show()
+		      If WithBattery Then other.ShowBattery // the window that has the node opens the Battery window
 		      Self.Close
 		      Return
 		    End If
@@ -598,6 +603,7 @@ End
 		  SetStatus("connected")
 		  Self.Show()
 		  SetupWindow.AddDeviceSource(Self)
+		  If WithBattery Then ShowBattery
 		End Sub
 	#tag EndMethod
 
@@ -872,6 +878,23 @@ End
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
+		Sub ShowBattery()
+		  // A Battery window for this node (device tab, Battery): it shows what this window stores (logType 5), the
+		  // connected node first. One per node: an open one comes to the front
+		  For Each bw As BatteryWindow In MyBatteryWindows
+		    If bw.DeviceNode = mMyNum Then
+		      bw.Show()
+		      Return
+		    End If
+		  Next
+		  Dim w As New BatteryWindow
+		  Dim sourceText As String = NodeID + " via " + mSourceName
+		  w.SetupDevice(mMyNum, sourceText)
+		  SetupWindow.AddBatterySource(w, sourceText)
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Function SourceName() As String
 		  // host:port or the serial device's name
 		  Return mSourceName
@@ -1093,6 +1116,10 @@ End
 
 	#tag Property, Flags = &h21
 		Private mSuppressMenu As Boolean
+	#tag EndProperty
+
+	#tag Property, Flags = &h0
+		WithBattery As Boolean
 	#tag EndProperty
 
 

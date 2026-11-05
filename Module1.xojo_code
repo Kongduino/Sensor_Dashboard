@@ -63,6 +63,15 @@ Protected Module Module1
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
+		Sub BatteryChanged(node As Int64)
+		  // A window stored device metrics of node: every Battery window updates (each shows its own node)
+		  For Each w As BatteryWindow In MyBatteryWindows
+		    w.BatteryDataChanged(node)
+		  Next
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Sub SoilChanged()
 		  // A window stored soil readings: every Soil window shows them (each picks its own nodes)
 		  For Each w As SoilWindow In MySoilWindows
@@ -298,6 +307,10 @@ Protected Module Module1
 
 	#tag Property, Flags = &h0
 		MySoilWindows() As SoilWindow
+	#tag EndProperty
+
+	#tag Property, Flags = &h0
+		MyBatteryWindows() As BatteryWindow
 	#tag EndProperty
 
 

@@ -491,7 +491,7 @@ End
 		  End If
 		  If type = "telemetry" Then
 		    // A feed of one node: the other nodes' environment readings are left out, but soil readings of any node are
-		    // stored for the Soil window
+		    // stored for the Soil window, and device metrics of any node for battery curves (logType 4, see BatteryCurve)
 		    Dim followed As Boolean = (mNodeFilter = 0 Or js.Lookup("from", 0).UInt64Value = mNodeFilter)
 		    Dim rssi, snr, temp, rh, pa As Double
 		    Dim payload As JSONItem
@@ -508,10 +508,18 @@ End
 		      senderID = Format(Val(senderID), "0") // all digits: Str() of a Double gives 1.867777e+9
 		    End If
 		    payload = js.Lookup("payload", Nil)
-		    // Sensor readings only (environment telemetry): device metrics (battery, voltage...) are neither
-		    // charted, RSSI / SNR included, nor stored, as in the Meshtastic window
+		    // Sensor readings only (environment telemetry) are charted, RSSI / SNR included: device metrics (battery,
+		    // voltage...) are only stored, apart (logType 4)
 		    Dim hasEnvironment As Boolean = (payload <> Nil And payload.HasKey("temperature"))
 		    Dim hasSoil As Boolean = HasSoilData(payload)
+		    If IsDeviceMetrics(payload) Then
+		      Dim hops, hopStart, relayNode As Integer
+		      Dim viaMQTT As Boolean
+		      MeshLastPacketRadio(hops, hopStart, relayNode, viaMQTT)
+		      LogTelemetry(4, fromID, senderID, Str(TS), payload.ToString, rssi, snr, MySessionNum, hops, hopStart, relayNode, viaMQTT)
+		      BatteryChanged(js.Lookup("from", 0).UInt64Value)
+		      Return
+		    End If
 		    If (followed And hasEnvironment) Or hasSoil Then
 		      // Stored as received, with the hops; charted only for a packet the gateway heard directly (see IsDirect)
 		      Dim hops, hopStart, relayNode As Integer
